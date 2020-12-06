@@ -7,11 +7,12 @@ import android.text.TextUtils;
 import java.util.List;
 
 import ceui.lisa.R;
-import ceui.lisa.base.BaseActivity;
 import ceui.lisa.databinding.ActivityOutWakeBinding;
 import ceui.lisa.interfaces.Callback;
 import ceui.lisa.utils.Params;
 import ceui.lisa.utils.PixivOperate;
+
+import static ceui.lisa.activities.Shaft.sUserModel;
 
 public class OutWakeActivity extends BaseActivity<ActivityOutWakeBinding> {
 
@@ -40,19 +41,33 @@ public class OutWakeActivity extends BaseActivity<ActivityOutWakeBinding> {
                 String scheme = uri.getScheme();
                 if (!TextUtils.isEmpty(scheme)) {
 
-                    if (uri.getPath() != null && uri.getPath().contains("artworks")) {
-                        List<String> pathArray = uri.getPathSegments();
-                        String illustID = pathArray.get(pathArray.size() - 1);
-                        if (!TextUtils.isEmpty(illustID)) {
-                            PixivOperate.getIllustByID(Shaft.sUserModel, Integer.valueOf(illustID), mContext, new Callback<Void>() {
-                                @Override
-                                public void doSomething(Void t) {
-                                    finish();
-                                }
-                            });
-                            return;
+                    if (uri.getPath() != null) {
+                        if (uri.getPath().contains("artworks")) {
+                            List<String> pathArray = uri.getPathSegments();
+                            String illustID = pathArray.get(pathArray.size() - 1);
+                            if (!TextUtils.isEmpty(illustID)) {
+                                PixivOperate.getIllustByID(Shaft.sUserModel, Integer.valueOf(illustID), mContext, new Callback<Void>() {
+                                    @Override
+                                    public void doSomething(Void t) {
+                                        finish();
+                                    }
+                                });
+                                return;
+                            }
+                        }
+
+                        if (uri.getPath().contains("users")) {
+                            List<String> pathArray = uri.getPathSegments();
+                            String userID = pathArray.get(pathArray.size() - 1);
+                            if (!TextUtils.isEmpty(userID)) {
+                                Intent userIntent = new Intent(mContext, UserActivity.class);
+                                userIntent.putExtra(Params.USER_ID, Integer.valueOf(userID));
+                                startActivity(userIntent);
+                                return;
+                            }
                         }
                     }
+
 
                     //http网页跳转到这里
                     if (scheme.contains("http")) {
@@ -95,11 +110,30 @@ public class OutWakeActivity extends BaseActivity<ActivityOutWakeBinding> {
                                 String path = uri.getPath();
                                 PixivOperate.getIllustByID(Shaft.sUserModel, Integer.valueOf(path.substring(1)),
                                         mContext, t -> finish());
+                                return;
+                            }
+
+                            if (host.contains("novels")) {
+                                String path = uri.getPath();
+                                PixivOperate.getNovelByID(Shaft.sUserModel, Integer.valueOf(path.substring(1)),
+                                        mContext, t -> finish());
+                                return;
                             }
                         }
                     }
                 }
             }
+        }
+
+        if (sUserModel != null && sUserModel.getResponse().getUser().isIs_login()) {
+            Intent i = new Intent(mContext, MainActivity.class);
+            mActivity.startActivity(i);
+            mActivity.finish();
+        } else {
+            Intent i = new Intent(mContext, TemplateActivity.class);
+            i.putExtra(TemplateActivity.EXTRA_FRAGMENT, "登录注册");
+            startActivity(i);
+            finish();
         }
     }
 }

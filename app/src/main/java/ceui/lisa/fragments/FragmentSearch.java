@@ -12,9 +12,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.qmuiteam.qmui.skin.QMUISkinManager;
+import com.qmuiteam.qmui.widget.dialog.QMUIDialog;
+import com.qmuiteam.qmui.widget.dialog.QMUIDialogAction;
 import com.zhy.view.flowlayout.FlowLayout;
 import com.zhy.view.flowlayout.TagAdapter;
 import com.zhy.view.flowlayout.TagFlowLayout;
@@ -51,8 +53,6 @@ import static ceui.lisa.utils.PixivOperate.insertSearchHistory;
 
 public class FragmentSearch extends BaseFragment<FragmentSearchBinding> {
 
-    public static final String[] SEARCH_TYPE = new String[]{"标签搜作品", "ID搜作品", "关键字搜画师", "ID搜画师"};
-
     private ObservableEmitter<String> fuck = null;
     private int searchType = 0;
 
@@ -62,7 +62,15 @@ public class FragmentSearch extends BaseFragment<FragmentSearchBinding> {
     }
 
     @Override
-    void initData() {
+    protected void initData() {
+        final String[] SEARCH_TYPE = new String[]{
+                getString(R.string.string_149),
+                getString(R.string.string_150),
+                getString(R.string.string_151),
+                getString(R.string.string_152),
+                getString(R.string.string_153)
+        };
+
         ViewGroup.LayoutParams headParams = baseBind.head.getLayoutParams();
         headParams.height = Shaft.statusHeight;
         baseBind.head.setLayoutParams(headParams);
@@ -76,7 +84,7 @@ public class FragmentSearch extends BaseFragment<FragmentSearchBinding> {
                 .debounce(800, TimeUnit.MILLISECONDS)
                 .subscribe(new ErrorCtrl<String>() {
                     @Override
-                    public void onNext(String s) {
+                    public void next(String s) {
                         completeWord(s);
                     }
                 });
@@ -106,11 +114,10 @@ public class FragmentSearch extends BaseFragment<FragmentSearchBinding> {
             @Override
             public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
                 if (!TextUtils.isEmpty(baseBind.inputBox.getText().toString())) {
-                    Common.showLog(className + "点击了一次输入框的搜索");
                     dispatchClick(baseBind.inputBox.getText().toString(), searchType);
                     return true;
                 } else {
-                    Common.showToast("请输入搜索内容");
+                    Common.showToast(getString(R.string.string_148));
                 }
                 return false;
             }
@@ -155,19 +162,21 @@ public class FragmentSearch extends BaseFragment<FragmentSearchBinding> {
         baseBind.more.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
-                builder.setItems(SEARCH_TYPE, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (searchType != which) {
-                            baseBind.inputBox.setText("");
-                            baseBind.inputBox.setHint(SEARCH_TYPE[which]);
-                            searchType = which;
-                        }
-                    }
-                });
-                AlertDialog alertDialog = builder.create();
-                alertDialog.show();
+                new QMUIDialog.CheckableDialogBuilder(mContext)
+                        .setCheckedIndex(searchType)
+                        .setSkinManager(QMUISkinManager.defaultInstance(mContext))
+                        .addItems(SEARCH_TYPE, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                if (searchType != which) {
+                                    baseBind.inputBox.setHint(SEARCH_TYPE[which]);
+                                    searchType = which;
+                                }
+                                dialog.dismiss();
+                            }
+                        })
+                        .create()
+                        .show();
             }
         });
         baseBind.inputBox.setHint(SEARCH_TYPE[searchType]);
@@ -187,7 +196,7 @@ public class FragmentSearch extends BaseFragment<FragmentSearchBinding> {
                 insertSearchHistory(keyWord, searchType);
                 PixivOperate.getIllustByID(sUserModel, Integer.valueOf(keyWord), mContext);
             } else {
-                Common.showToast("ID必须为全数字");
+                Common.showToast(getString(R.string.string_154));
             }
         } else if (searchType == 2) {
             insertSearchHistory(keyWord, searchType);
@@ -203,7 +212,14 @@ public class FragmentSearch extends BaseFragment<FragmentSearchBinding> {
                 intent.putExtra(Params.USER_ID, Integer.valueOf(keyWord));
                 startActivity(intent);
             } else {
-                Common.showToast("ID必须为全数字");
+                Common.showToast(getString(R.string.string_154));
+            }
+        } else if (searchType == 4) {
+            if (isNumeric(keyWord)) {
+                insertSearchHistory(keyWord, searchType);
+                PixivOperate.getNovelByID(sUserModel, Integer.valueOf(keyWord), mContext, null);
+            } else {
+                Common.showToast(getString(R.string.string_154));
             }
         }
     }
@@ -238,32 +254,34 @@ public class FragmentSearch extends BaseFragment<FragmentSearchBinding> {
         Retro.getAppApi().getHotTags(sUserModel.getResponse().getAccess_token(), Params.TYPE_ILLUST)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new ErrorCtrl<ListTrendingtag>() {
+                .subscribe(new NullCtrl<ListTrendingtag>() {
                     @Override
-                    public void onNext(ListTrendingtag listTrendingtag) {
-                        if (listTrendingtag != null) {
-                            baseBind.hotTags.setAdapter(new TagAdapter<ListTrendingtag.TrendTagsBean>(
-                                    listTrendingtag.getList().subList(0, 15)) {
-                                @Override
-                                public View getView(FlowLayout parent, int position, ListTrendingtag.TrendTagsBean trendTagsBean) {
-                                    TextView tv = (TextView) LayoutInflater.from(mContext).inflate(R.layout.recy_single_line_text,
-                                            parent, false);
+                    public void success(ListTrendingtag listTrendingtag) {
+                        baseBind.hotTags.setAdapter(new TagAdapter<ListTrendingtag.TrendTagsBean>(
+                                listTrendingtag.getList().subList(0, 15)) {
+                            @Override
+                            public View getView(FlowLayout parent, int position, ListTrendingtag.TrendTagsBean trendTagsBean) {
+                                TextView tv = (TextView) LayoutInflater.from(mContext).inflate(R.layout.recy_single_line_text,
+                                        parent, false);
+                                if (!TextUtils.isEmpty(trendTagsBean.getTranslated_name())) {
+                                    tv.setText(trendTagsBean.getTag() + "/" + trendTagsBean.getTranslated_name());
+                                } else {
                                     tv.setText(trendTagsBean.getTag());
-                                    return tv;
                                 }
-                            });
-                            baseBind.hotTags.setOnTagClickListener(new TagFlowLayout.OnTagClickListener() {
-                                @Override
-                                public boolean onTagClick(View view, int position, FlowLayout parent) {
-                                    baseBind.hintList.setVisibility(View.INVISIBLE);
-                                    Intent intent = new Intent(mContext, SearchActivity.class);
-                                    intent.putExtra(Params.KEY_WORD, listTrendingtag.getList().get(position).getTag());
-                                    intent.putExtra(Params.INDEX, 0);
-                                    startActivity(intent);
-                                    return false;
-                                }
-                            });
-                        }
+                                return tv;
+                            }
+                        });
+                        baseBind.hotTags.setOnTagClickListener(new TagFlowLayout.OnTagClickListener() {
+                            @Override
+                            public boolean onTagClick(View view, int position, FlowLayout parent) {
+                                baseBind.hintList.setVisibility(View.INVISIBLE);
+                                Intent intent = new Intent(mContext, SearchActivity.class);
+                                intent.putExtra(Params.KEY_WORD, listTrendingtag.getList().get(position).getTag());
+                                intent.putExtra(Params.INDEX, 0);
+                                startActivity(intent);
+                                return false;
+                            }
+                        });
                     }
                 });
     }
@@ -286,20 +304,26 @@ public class FragmentSearch extends BaseFragment<FragmentSearchBinding> {
             baseBind.clearHistory.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
-                    builder.setTitle("Shaft 提示");
-                    builder.setMessage("这将会删除所有的本地搜索历史");
-                    builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            AppDatabase.getAppDatabase(Shaft.getContext()).searchDao().deleteAll();
-                            Common.showToast("搜索历史删除成功");
-                            onResume();
-                        }
-                    });
-                    builder.setNegativeButton("取消", null);
-                    AlertDialog alertDialog = builder.create();
-                    alertDialog.show();
+                    new QMUIDialog.MessageDialogBuilder(getActivity())
+                            .setTitle(getString(R.string.string_143))
+                            .setMessage(getString(R.string.string_144))
+                            .setSkinManager(QMUISkinManager.defaultInstance(getContext()))
+                            .addAction(getString(R.string.string_142), new QMUIDialogAction.ActionListener() {
+                                @Override
+                                public void onClick(QMUIDialog dialog, int index) {
+                                    dialog.dismiss();
+                                }
+                            })
+                            .addAction(0, getString(R.string.string_141), QMUIDialogAction.ACTION_PROP_NEGATIVE, new QMUIDialogAction.ActionListener() {
+                                @Override
+                                public void onClick(QMUIDialog dialog, int index) {
+                                    AppDatabase.getAppDatabase(Shaft.getContext()).searchDao().deleteAll();
+                                    Common.showToast(getString(R.string.string_140));
+                                    dialog.dismiss();
+                                    onResume();
+                                }
+                            })
+                            .show();
                 }
             });
         } else {
@@ -332,6 +356,10 @@ public class FragmentSearch extends BaseFragment<FragmentSearchBinding> {
                     Intent intent = new Intent(mContext, UserActivity.class);
                     intent.putExtra(Params.USER_ID, Integer.valueOf(history.get(position).getKeyword()));
                     startActivity(intent);
+                } else if (history.get(position).getSearchType() == 4) {
+                    history.get(position).setSearchTime(System.currentTimeMillis());
+                    AppDatabase.getAppDatabase(mContext).searchDao().insert(history.get(position));
+                    PixivOperate.getNovelByID(sUserModel, Integer.parseInt(history.get(position).getKeyword()), mContext, null);
                 }
                 return false;
             }

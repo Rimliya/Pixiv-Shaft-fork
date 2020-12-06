@@ -2,13 +2,13 @@ package ceui.lisa.fragments;
 
 import android.content.Intent;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
+
+import com.blankj.utilcode.util.BarUtils;
 
 import ceui.lisa.R;
 import ceui.lisa.activities.Shaft;
@@ -24,16 +24,12 @@ public class FragmentNewNovel extends BaseFragment<FragmentNewNovelBinding> {
     }
 
     @Override
-    public void initView(View view) {
+    public void initView() {
+        BarUtils.setStatusBarColor(mActivity, android.R.attr.colorPrimary);
         String[] TITLES = new String[]{
                 Shaft.getContext().getString(R.string.recommend_illust),
                 Shaft.getContext().getString(R.string.hot_tag)
         };
-
-        ViewGroup.LayoutParams headParams = baseBind.head.getLayoutParams();
-        headParams.height = Shaft.statusHeight;
-        baseBind.head.setLayoutParams(headParams);
-
         baseBind.toolbar.setNavigationOnClickListener(v -> {
             mActivity.finish();
         });

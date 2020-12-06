@@ -38,7 +38,7 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
         int viewType = getItemViewType(position);
         if (viewType == ITEM_NORMAL) {
             int index = position - headerSize();
-            bindData(allIllust.get(index), (ViewHolder<BindView>) holder, index);
+            tryCatchBindData(allIllust.get(index), (ViewHolder<BindView>) holder, index);
         } else if (viewType == ITEM_HEAD) {
 
         }
@@ -53,9 +53,17 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
 
     public abstract void bindData(Item target, ViewHolder<BindView> bindView, int position);
 
+    private void tryCatchBindData(Item target, ViewHolder<BindView> bindView, int position){
+        try {
+            bindData(target, bindView, position);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ViewHolder<? extends ViewDataBinding> onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         if (viewType == ITEM_NORMAL) {
             return getNormalItem(parent);
         } else {
@@ -69,7 +77,7 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
     }
 
     public void clear() {
-        int size = allIllust.size();
+        final int size = allIllust.size();
         allIllust.clear();
         notifyItemRangeRemoved(0, size);
     }
@@ -86,7 +94,7 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
         return 0;
     }
 
-    public ViewHolder getHeader(ViewGroup parent) {
+    public ViewHolder<? extends ViewDataBinding> getHeader(ViewGroup parent) {
         return null;
     }
 

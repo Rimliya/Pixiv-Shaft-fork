@@ -37,10 +37,10 @@
             android:layout_marginEnd="@dimen/sixteen_dp"
             android:layout_marginBottom="@dimen/four_dp"
             android:text="@string/see_more"
-            android:drawableRight="@drawable/ic_chevron_right_black_24dp"
+            android:drawableEnd="@drawable/ic_chevron_right_black_24dp"
             android:gravity="center"
-            android:drawableTint="@color/colorPrimary"
-            android:textColor="#748c98"
+            android:drawableTint="?attr/colorPrimary"
+            android:textColor="?attr/colorPrimary"
             android:textSize="13sp" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -88,3 +88,4 @@
     </RelativeLayout>
 
 </layout>
+

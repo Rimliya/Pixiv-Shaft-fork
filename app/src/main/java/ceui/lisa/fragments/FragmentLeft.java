@@ -3,7 +3,6 @@ package ceui.lisa.fragments;
 import android.content.Intent;
 import android.view.Gravity;
 import android.view.MenuItem;
-import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -18,7 +17,7 @@ import ceui.lisa.activities.TemplateActivity;
 import ceui.lisa.databinding.FragmentLeftBinding;
 import ceui.lisa.utils.Params;
 
-public class FragmentLeft extends BaseFragment<FragmentLeftBinding> {
+public class FragmentLeft extends BaseLazyFragment<FragmentLeftBinding> {
 
     @Override
     public void initLayout() {
@@ -26,21 +25,17 @@ public class FragmentLeft extends BaseFragment<FragmentLeftBinding> {
     }
 
     @Override
-    public void initView(View view) {
-        String[] TITLES = new String[]{
-                Shaft.getContext().getString(R.string.recommend_illust),
-                Shaft.getContext().getString(R.string.hot_tag)
-        };
-
+    public void initView() {
         ViewGroup.LayoutParams headParams = baseBind.head.getLayoutParams();
         headParams.height = Shaft.statusHeight;
         baseBind.head.setLayoutParams(headParams);
 
         baseBind.toolbar.setNavigationOnClickListener(v -> {
-            if (requireActivity() instanceof MainActivity) {
-                ((MainActivity) requireActivity()).getDrawer().openDrawer(Gravity.START);
+            if (mActivity instanceof MainActivity) {
+                ((MainActivity) mActivity).getDrawer().openDrawer(Gravity.START);
             }
         });
+        baseBind.toolbarTitle.setText(R.string.string_207);
         baseBind.toolbar.inflateMenu(R.menu.fragment_left);
         baseBind.toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
@@ -54,6 +49,14 @@ public class FragmentLeft extends BaseFragment<FragmentLeftBinding> {
                 return false;
             }
         });
+    }
+
+    @Override
+    public void lazyData() {
+        String[] TITLES = new String[]{
+                Shaft.getContext().getString(R.string.recommend_illust),
+                Shaft.getContext().getString(R.string.hot_tag)
+        };
         baseBind.viewPager.setAdapter(new FragmentPagerAdapter(getChildFragmentManager(), 0) {
             @NonNull
             @Override

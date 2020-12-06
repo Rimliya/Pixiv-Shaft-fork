@@ -64,7 +64,7 @@ public class FragmentImageDetail extends BaseFragment<FragmentImageDetailBinding
     }
 
     @Override
-    void initData() {
+    protected void initData() {
         baseBind.illustImage.setTransitionName("big_image_" + index);
         BarUtils.setNavBarVisibility(mActivity, false);
         if (!TextUtils.isEmpty(url)) {
@@ -123,7 +123,7 @@ public class FragmentImageDetail extends BaseFragment<FragmentImageDetailBinding
         if (Shaft.sSettings.isFirstImageSize()) {
             Common.showLog(className + "展示原图");
             Glide.with(mContext)
-                    .load(GlideUtil.getOriginalWithInvertProxy(mIllustsBean, index))
+                    .load(GlideUtil.getOriginal(mIllustsBean, index))
                     .transition(withCrossFade())
                     .listener(requestListener)
                     .into(baseBind.illustImage);
@@ -138,7 +138,7 @@ public class FragmentImageDetail extends BaseFragment<FragmentImageDetailBinding
     }
 
     @Override
-    public void initView(View view) {
+    public void initView() {
         baseBind.illustImage.setOnPhotoTapListener(new OnPhotoTapListener() {
             @Override
             public void onPhotoTap(ImageView view, float x, float y) {

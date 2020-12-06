@@ -1,6 +1,5 @@
 package ceui.lisa.activities;
 
-import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
@@ -20,18 +19,17 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.viewpager.widget.ViewPager;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
-import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import java.io.File;
 
 import ceui.lisa.R;
-import ceui.lisa.base.BaseActivity;
+import ceui.lisa.core.Manager;
 import ceui.lisa.databinding.ActivityCoverBinding;
-import ceui.lisa.download.TaskQueue;
-import ceui.lisa.fragments.BaseFragment;
 import ceui.lisa.fragments.FragmentCenter;
 import ceui.lisa.fragments.FragmentLeft;
 import ceui.lisa.fragments.FragmentRight;
@@ -42,7 +40,6 @@ import ceui.lisa.utils.Local;
 import ceui.lisa.utils.Params;
 import ceui.lisa.utils.ReverseImage;
 import ceui.lisa.utils.ReverseWebviewCallback;
-import io.reactivex.disposables.Disposable;
 
 import static ceui.lisa.activities.Shaft.sUserModel;
 
@@ -56,7 +53,7 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
     private TextView username;
     private TextView user_email;
     private long mExitTime;
-    private BaseFragment<?>[] baseFragments = null;
+    private Fragment[] baseFragments = null;
 
     @Override
     protected int initLayout() {
@@ -83,11 +80,66 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
                 Common.showUser(mContext, sUserModel);
             }
         });
-        baseBind.viewPager.setOffscreenPageLimit(3);
+        baseBind.navigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                if (item.getItemId() == R.id.action_1) {
+                    if (baseBind.viewPager.getCurrentItem() != 0) {
+                        baseBind.viewPager.setCurrentItem(0);
+                    }
+                    return true;
+                } else if (item.getItemId() == R.id.action_2) {
+                    if (baseBind.viewPager.getCurrentItem() != 1) {
+                        baseBind.viewPager.setCurrentItem(1);
+                    }
+                    return true;
+                } else if (item.getItemId() == R.id.action_3) {
+                    if (baseBind.viewPager.getCurrentItem() != 2) {
+                        baseBind.viewPager.setCurrentItem(2);
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
+        baseBind.navigationView.setOnNavigationItemReselectedListener(new BottomNavigationView.OnNavigationItemReselectedListener() {
+            @Override
+            public void onNavigationItemReselected(@NonNull MenuItem item) {
+                if (item.getItemId() == R.id.action_1) {
+                    Common.showToast("刷新左侧");
+                } else if (item.getItemId() == R.id.action_2) {
+                    Common.showToast("刷新中间");
+                } else if (item.getItemId() == R.id.action_3) {
+                    Common.showToast("刷新右侧");
+                }
+            }
+        });
+        baseBind.viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                if (position == 0) {
+                    baseBind.navigationView.setSelectedItemId(R.id.action_1);
+                } else if (position == 1) {
+                    baseBind.navigationView.setSelectedItemId(R.id.action_2);
+                } else {
+                    baseBind.navigationView.setSelectedItemId(R.id.action_3);
+                }
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
     }
 
     private void initFragment() {
-        baseFragments = new BaseFragment[]{
+        baseFragments = new Fragment[]{
                 new FragmentLeft(),
                 new FragmentCenter(),
                 new FragmentRight()
@@ -103,25 +155,12 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
                 return baseFragments.length;
             }
         });
-        baseBind.navigationView.setupWithViewPager(baseBind.viewPager);
     }
 
     @Override
     protected void initData() {
         if (sUserModel != null && sUserModel.getResponse().getUser().isIs_login()) {
-            final RxPermissions rxPermissions = new RxPermissions(mActivity);
-            Disposable disposable = rxPermissions
-                    .requestEachCombined(
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    )
-                    .subscribe(permission -> {
-                        if (permission.granted) {
-                            initFragment();
-                        } else {
-                            Common.showToast(mActivity.getString(R.string.access_denied));
-                            finish();
-                        }
-                    });
+            initFragment();
         } else {
             Intent intent = new Intent(mContext, TemplateActivity.class);
             intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "登录注册");
@@ -141,11 +180,6 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
 
         Intent intent = null;
         switch (id) {
-            case R.id.nav_camera:
-                intent = new Intent(mContext, TemplateActivity.class);
-                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "收藏夹");
-                intent.putExtra("hideStatusBar", false);
-                break;
             case R.id.nav_gallery:
                 intent = new Intent(mContext, TemplateActivity.class);
                 intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "下载管理");
@@ -170,10 +204,6 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
             case R.id.nav_reverse:
                 selectPhoto();
                 break;
-            case R.id.nav_send:
-                intent = new Intent(mContext, TemplateActivity.class);
-                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "画廊");
-                break;
             case R.id.nav_new_work:
                 intent = new Intent(mContext, TemplateActivity.class);
                 intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "最新作品");
@@ -182,6 +212,37 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
             case R.id.muted_list:
                 intent = new Intent(mContext, TemplateActivity.class);
                 intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "标签屏蔽记录");
+                break;
+            case R.id.nav_feature:
+                intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "精华列");
+                break;
+            case R.id.nav_fans:
+                if (Dev.isDev) {
+                    intent = new Intent(mContext, VPActivity.class);
+//                    intent = new Intent(mContext, TemplateActivity.class);
+//                    intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "测试测试");
+                } else {
+                    intent = new Intent(mContext, TemplateActivity.class);
+                    intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "粉丝");
+                }
+                break;
+            case R.id.illust_star:
+                intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "我的插画收藏");
+                intent.putExtra("hideStatusBar", false);
+                break;
+            case R.id.novel_star:
+                intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "我的小说收藏");
+                intent.putExtra("hideStatusBar", false);
+                break;
+            case R.id.follow_user:
+                intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "我的关注");
+                intent.putExtra("hideStatusBar", false);
+                break;
+            default:
                 break;
         }
         if (intent != null) {
@@ -240,14 +301,13 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
 
     public void exit() {
         if ((System.currentTimeMillis() - mExitTime) > 2000) {
-            if (TaskQueue.get().getTasks().size() != 0) {
+            if (Manager.get().getContent().size() != 0) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
                 builder.setTitle(getString(R.string.shaft_hint));
                 builder.setMessage(mContext.getString(R.string.you_have_download_plan));
                 builder.setPositiveButton(mContext.getString(R.string.sure), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        TaskQueue.get().clearTask();
                         finish();
                     }
                 });
@@ -255,7 +315,7 @@ public class MainActivity extends BaseActivity<ActivityCoverBinding>
                 builder.setNeutralButton(getString(R.string.see_download_task), (dialog, which) -> {
                     Intent intent = new Intent(mContext, TemplateActivity.class);
                     intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "下载管理");
-                    intent.putExtra("hideStatusBar", false);
+                    intent.putExtra("hideStatusBar", true);
                     startActivity(intent);
                 });
                 AlertDialog alertDialog = builder.create();

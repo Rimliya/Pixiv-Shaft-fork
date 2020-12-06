@@ -21,9 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ceui.lisa.R;
-import ceui.lisa.base.BaseActivity;
 import ceui.lisa.databinding.ActicityUserBinding;
-import ceui.lisa.fragments.FragmentLikeIllust;
 import ceui.lisa.fragments.FragmentLikeIllustHorizontal;
 import ceui.lisa.fragments.FragmentLikeNovelHorizontal;
 import ceui.lisa.http.ErrorCtrl;
@@ -62,6 +60,13 @@ public class UserActivity extends BaseActivity<ActicityUserBinding> implements D
     @Override
     protected void initData() {
         int userID = getIntent().getIntExtra(Params.USER_ID, 0);
+        if (Shaft.sSettings.isUseNewUserPage()) {
+            Intent intent = new Intent(mContext, UActivity.class);
+            intent.putExtra(Params.USER_ID, userID);
+            startActivity(intent);
+            finish();
+            return;
+        }
         mUserViewModel = new ViewModelProvider(this).get(UserViewModel.class);
         mUserViewModel.getUser().observe(this, new Observer<UserDetailResponse>() {
             @Override
@@ -74,7 +79,7 @@ public class UserActivity extends BaseActivity<ActicityUserBinding> implements D
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new ErrorCtrl<UserDetailResponse>() {
                     @Override
-                    public void onNext(UserDetailResponse user) {
+                    public void next(UserDetailResponse user) {
                         mUserViewModel.getUser().setValue(user);
                     }
                 });
@@ -84,6 +89,8 @@ public class UserActivity extends BaseActivity<ActicityUserBinding> implements D
                 gray(isChecked);
             }
         });
+
+
     }
 
     @Override
@@ -109,9 +116,9 @@ public class UserActivity extends BaseActivity<ActicityUserBinding> implements D
         baseBind.userAddress.setText(Common.checkEmpty(currentUser.getProfile().getRegion()));
         baseBind.userAddress.setVisibility(View.VISIBLE);
         List<String> tagList = new ArrayList<>();
-        tagList.add("好P友: " + currentUser.getProfile().getTotal_mypixiv_users());
-        tagList.add("关注: " + currentUser.getProfile().getTotal_follow_users());
-        tagList.add("详细信息");
+        tagList.add(getString(R.string.string_147) + currentUser.getProfile().getTotal_mypixiv_users());
+        tagList.add(getString(R.string.string_145) + currentUser.getProfile().getTotal_follow_users());
+        tagList.add(getString(R.string.string_146));
         baseBind.tagType.setAdapter(new TagAdapter<String>(tagList) {
             @Override
             public View getView(FlowLayout parent, int position, String s) {
@@ -183,7 +190,7 @@ public class UserActivity extends BaseActivity<ActicityUserBinding> implements D
                         baseBind.send.setImageResource(R.drawable.ic_favorite_accent_24dp);
                         currentUser.getUser().setIs_followed(true);
                         PixivOperate.postFollowUser(currentUser.getUser().getId(),
-                                FragmentLikeIllust.TYPE_PUBLUC);
+                                Params.TYPE_PUBLUC);
                     }
                 }
             });
@@ -194,7 +201,7 @@ public class UserActivity extends BaseActivity<ActicityUserBinding> implements D
                         baseBind.send.setImageResource(R.drawable.ic_favorite_accent_24dp);
                         currentUser.getUser().setIs_followed(true);
                         PixivOperate.postFollowUser(currentUser.getUser().getId(),
-                                FragmentLikeIllust.TYPE_PRIVATE);
+                                Params.TYPE_PRIVATE);
                     }
                     return true;
                 }

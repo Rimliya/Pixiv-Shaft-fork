@@ -1,7 +1,6 @@
 package ceui.lisa.fragments;
 
 import android.content.Intent;
-import android.text.TextUtils;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
 import android.view.LayoutInflater;
@@ -21,7 +20,7 @@ import ceui.lisa.activities.TemplateActivity;
 import ceui.lisa.database.AppDatabase;
 import ceui.lisa.database.UserEntity;
 import ceui.lisa.databinding.FragmentLocalUserBinding;
-import ceui.lisa.http.ErrorCtrl;
+import ceui.lisa.http.NullCtrl;
 import ceui.lisa.models.UserModel;
 import ceui.lisa.utils.Base64Util;
 import ceui.lisa.utils.Common;
@@ -48,22 +47,14 @@ public class FragmentLocalUsers extends BaseFragment<FragmentLocalUserBinding> {
     }
 
     @Override
-    public void initView(View view) {
-        baseBind.toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+    public void initView() {
+        baseBind.toolbar.toolbarTitle.setText(R.string.string_251);
+        baseBind.toolbar.toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mActivity.finish();
             }
         });
-        baseBind.loginOut.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(mContext, TemplateActivity.class);
-                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "登录注册");
-                startActivity(intent);
-            }
-        });
-
         baseBind.addUser.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -75,7 +66,7 @@ public class FragmentLocalUsers extends BaseFragment<FragmentLocalUserBinding> {
     }
 
     @Override
-    void initData() {
+    protected void initData() {
         Observable.create((ObservableOnSubscribe<List<UserEntity>>) emitter -> {
             List<UserEntity> temp = AppDatabase.getAppDatabase(mContext)
                     .downloadDao().getAllUser();
@@ -92,16 +83,14 @@ public class FragmentLocalUsers extends BaseFragment<FragmentLocalUserBinding> {
                     }
                 }).subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new ErrorCtrl<List<UserModel>>() {
+                .subscribe(new NullCtrl<List<UserModel>>() {
                     @Override
-                    public void onNext(List<UserModel> userModels) {
-                        if (userModels != null) {
-                            if (userModels.size() != 0) {
-                                for (int i = 0; i < userModels.size(); i++) {
-                                    View v = LayoutInflater.from(mContext).inflate(R.layout.recy_loal_user, null);
-                                    bindData(v, userModels.get(i));
-                                    baseBind.userList.addView(v);
-                                }
+                    public void success(List<UserModel> userModels) {
+                        if (userModels.size() != 0) {
+                            for (int i = 0; i < userModels.size(); i++) {
+                                View v = LayoutInflater.from(mContext).inflate(R.layout.recy_loal_user, null);
+                                bindData(v, userModels.get(i));
+                                baseBind.userList.addView(v);
                             }
                         }
                     }
@@ -154,7 +143,7 @@ public class FragmentLocalUsers extends BaseFragment<FragmentLocalUserBinding> {
                 userModel.getResponse().getUser().setPassword(passwordWithSign);
                 String userJson = Shaft.sGson.toJson(userModel);
                 Common.copy(mContext, userJson, false);
-                Common.showToast("已导出到剪切板", exp);
+                Common.showToast("已导出到剪切板", 2);
             }
         });
 

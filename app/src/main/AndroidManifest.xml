@@ -24,7 +24,8 @@
         android:roundIcon="@mipmap/logo_final_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".activities.MainActivity">
+        <activity
+            android:name=".activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -50,7 +51,9 @@
             android:windowSoftInputMode="adjustPan" />
         <activity android:name=".activities.RankActivity" />
         <activity android:name=".activities.ImageDetailActivity" />
-        <activity android:name=".activities.OutWakeActivity">
+        <activity
+            android:label="@string/string_310"
+            android:name=".activities.OutWakeActivity">
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
@@ -81,29 +84,23 @@
             android:name="notch.config"
             android:value="portrait|landscape" />
 
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/nnf_provider_paths" />
-        </provider>
-
-        <activity
-            android:name="com.nononsenseapps.filepicker.FilePickerActivity"
-            android:label="@string/app_name"
-            android:theme="@style/FilePickerTheme">
-            <intent-filter>
-                <action android:name="android.intent.action.GET_CONTENT" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
         <activity android:name=".activities.UserActivity" />
         <activity android:name=".activities.SearchActivity" />
         <activity android:name=".activities.VActivity" />
+        <activity android:name=".activities.UActivity" />
+        <activity
+            android:label="@string/string_311"
+            android:name=".activities.OutReversActivity" >
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+
+        </activity>
+        <activity android:name=".activities.VPActivity" />
+
     </application>
 
 </manifest>

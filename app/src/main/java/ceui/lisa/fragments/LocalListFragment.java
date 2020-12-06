@@ -17,19 +17,19 @@ public abstract class LocalListFragment<Layout extends ViewDataBinding, Item>
 
     @Override
     public void fresh() {
+        emptyRela.setVisibility(View.INVISIBLE);
         if (mLocalRepo.first() != null && mLocalRepo.first().size() != 0) {
             List<Item> firstList = mLocalRepo.first();
             if (mModel != null) {
-                mModel.load(firstList);
+                mModel.load(firstList, true);
             }
             onFirstLoaded(firstList);
             mRecyclerView.setVisibility(View.VISIBLE);
-            noData.setVisibility(View.INVISIBLE);
+            emptyRela.setVisibility(View.INVISIBLE);
             mAdapter.notifyItemRangeInserted(getStartSize(), firstList.size());
         } else {
             mRecyclerView.setVisibility(View.INVISIBLE);
-            noData.setVisibility(View.VISIBLE);
-            noData.setImageResource(R.mipmap.no_data_line);
+            emptyRela.setVisibility(View.VISIBLE);
         }
         mRefreshLayout.finishRefresh(true);
     }
@@ -41,20 +41,21 @@ public abstract class LocalListFragment<Layout extends ViewDataBinding, Item>
                 mLocalRepo.next().size() != 0) {
             List<Item> nextList = mLocalRepo.next();
             if (mModel != null) {
-                mModel.load(nextList);
+                mModel.load(nextList, false);
             }
             onNextLoaded(nextList);
             mAdapter.notifyItemRangeInserted(getStartSize(), mLocalRepo.next().size());
         } else {
             if (mLocalRepo.showNoDataHint()) {
-                Common.showToast("没有更多数据啦");
+                Common.showToast(getString(R.string.string_224));
             }
         }
         mRefreshLayout.finishLoadMore(true);
     }
 
     @Override
-    void initData() {
-        mLocalRepo = (LocalRepo<List<Item>>) mBaseRepo;
+    protected void initData() {
+        mLocalRepo = (LocalRepo<List<Item>>) mModel.getBaseRepo();
+        super.initData();
     }
 }

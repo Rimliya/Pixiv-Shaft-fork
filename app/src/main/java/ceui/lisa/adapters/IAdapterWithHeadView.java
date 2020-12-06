@@ -9,27 +9,20 @@ import androidx.databinding.DataBindingUtil;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import ceui.lisa.R;
-import ceui.lisa.http.NullCtrl;
-import ceui.lisa.http.Retro;
-import ceui.lisa.model.ListIllust;
+import ceui.lisa.databinding.RecyRecmdHeaderBinding;
 import ceui.lisa.models.IllustsBean;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.schedulers.Schedulers;
-
-import static ceui.lisa.activities.Shaft.sUserModel;
 
 public class IAdapterWithHeadView extends IAdapter {
 
     private IllustHeader mIllustHeader = null;
-    private RecyclerView mRecyclerView = null;
+    private String type = "";
 
-    public IAdapterWithHeadView(List<IllustsBean> targetList, Context context, RecyclerView recyclerView) {
+    public IAdapterWithHeadView(List<IllustsBean> targetList, Context context, String type) {
         super(targetList, context);
-        mRecyclerView = recyclerView;
+        this.type = type;
     }
 
     @Override
@@ -38,14 +31,14 @@ public class IAdapterWithHeadView extends IAdapter {
     }
 
     @Override
-    public ViewHolder getHeader(ViewGroup parent) {
+    public ViewHolder<RecyRecmdHeaderBinding> getHeader(ViewGroup parent) {
         mIllustHeader = new IllustHeader(
                 DataBindingUtil.inflate(
                         LayoutInflater.from(mContext),
                         R.layout.recy_recmd_header,
                         null,
                         false
-                )
+                ), type
         );
         mIllustHeader.initView(mContext);
         return mIllustHeader;

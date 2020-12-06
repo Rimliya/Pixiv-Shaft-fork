@@ -1,7 +1,8 @@
 package ceui.lisa.http;
 
+import android.util.Log;
+
 import com.blankj.utilcode.util.DeviceUtils;
-import com.blankj.utilcode.util.GsonUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.safframework.http.interceptor.LoggingInterceptor;
@@ -15,6 +16,7 @@ import ceui.lisa.activities.Shaft;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Request;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -42,12 +44,11 @@ public class Retro {
         String osVersion = DeviceUtils.getSDKVersionName();
         String phoneName = DeviceUtils.getModel();
         before.addHeader("User-Agent", "PixivAndroidApp/5.0.175 (Android " + osVersion + "; " + phoneName + ")")
-                .addHeader("Accept-Language", "zh_CN")
-                .addHeader("X-Client-Time", pixivHeaders.getXClientTime())
-                .addHeader("X-Client-Hash", pixivHeaders.getXClientHash());
-//        if (addAuth && Shaft.sUserModel != null) {
-//            before.addHeader("Authorization", Shaft.sUserModel.getResponse().getAccess_token());
-//        }
+                .addHeader("accept-language", "zh-cn")
+                .addHeader(":authority", "app-api.pixiv.net")
+                .addHeader("x-client-time", pixivHeaders.getXClientTime())
+                .addHeader("x-client-hash", pixivHeaders.getXClientHash());
+
         return before;
     }
 
@@ -75,28 +76,6 @@ public class Retro {
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .baseUrl(baseUrl)
                 .build();
-    }
-
-    public static RankTokenApi getRankApi() {
-        Gson gson = new GsonBuilder().setLenient().create();
-        Retrofit retrofit = new Retrofit.Builder()
-                .client(getLogClient().build())
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .baseUrl(RankTokenApi.BASE_URL)
-                .build();
-        return retrofit.create(RankTokenApi.class);
-    }
-
-    public static HitoApi getHitoApi() {
-        Gson gson = new GsonBuilder().setLenient().create();
-        Retrofit retrofit = new Retrofit.Builder()
-                .client(getLogClient().build())
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .baseUrl(HitoApi.BASE_URL)
-                .build();
-        return retrofit.create(HitoApi.class);
     }
 
     public static <T> T create(String baseUrl, final Class<T> service) {
@@ -141,16 +120,20 @@ public class Retro {
     }
 
     public static OkHttpClient.Builder getLogClient() {
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(
+                message -> Log.i("RetroLog", message));
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
         return new OkHttpClient
                 .Builder()
                 .addInterceptor(
-                        new LoggingInterceptor.Builder()
-                                .loggable(true)
-                                .request()
-                                .requestTag("Request")
-                                .response()
-                                .responseTag("Response")
-                                .build()
+//                        new LoggingInterceptor.Builder()
+//                                .loggable(true)
+//                                .request()
+//                                .requestTag("Request")
+//                                .response()
+//                                .responseTag("Response")
+//                                .build()
+                        loggingInterceptor
                 )
                 .protocols(Collections.singletonList(Protocol.HTTP_1_1));
     }

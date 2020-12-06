@@ -1,24 +1,21 @@
 package ceui.lisa.core;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import ceui.lisa.activities.Shaft;
-import ceui.lisa.helper.TagFilter;
 import ceui.lisa.http.NullCtrl;
 import ceui.lisa.interfaces.ListShow;
-import ceui.lisa.model.ListIllust;
-import ceui.lisa.models.IllustsBean;
-import ceui.lisa.utils.Common;
-import ceui.lisa.utils.PixivOperate;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
-public abstract class RemoteRepo<Response extends ListShow<?>> extends BaseRepo {
+public abstract class RemoteRepo<Response extends ListShow<?>> extends BaseRepo{
 
     private Observable<Response> mApi;
+    private Function<? super Response, Response> mFunction;
+    protected String nextUrl = "";
+
+    public RemoteRepo() {
+        mFunction = mapper();
+    }
 
     public abstract Observable<Response> initApi();
 
@@ -29,7 +26,7 @@ public abstract class RemoteRepo<Response extends ListShow<?>> extends BaseRepo 
         if (mApi != null) {
             mApi.subscribeOn(Schedulers.newThread())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .map(mapper())
+                    .map(mFunction)
                     .subscribe(nullCtrl);
         }
     }
@@ -39,12 +36,20 @@ public abstract class RemoteRepo<Response extends ListShow<?>> extends BaseRepo 
         if (mApi != null) {
             mApi.subscribeOn(Schedulers.newThread())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .map(mapper())
+                    .map(mFunction)
                     .subscribe(nullCtrl);
         }
     }
 
     public Function<? super Response, Response> mapper() {
         return new Mapper<>();
+    }
+
+    public String getNextUrl() {
+        return nextUrl;
+    }
+
+    public void setNextUrl(String nextUrl) {
+        this.nextUrl = nextUrl;
     }
 }

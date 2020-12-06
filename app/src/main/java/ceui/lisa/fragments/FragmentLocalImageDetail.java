@@ -34,7 +34,7 @@ public class FragmentLocalImageDetail extends BaseFragment<FragmentImageDetailBi
     }
 
     @Override
-    public void initView(View view) {
+    public void initView() {
         Glide.with(mContext)
                 .load(filePath)
                 .transition(withCrossFade())

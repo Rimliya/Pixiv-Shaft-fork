@@ -1,46 +1,58 @@
 package ceui.lisa.fragments;
 
 import android.content.Intent;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.GravityCompat;
 import androidx.fragment.app.FragmentTransaction;
 
-import com.scwang.smartrefresh.layout.footer.FalsifyFooter;
-import com.scwang.smartrefresh.layout.header.FalsifyHeader;
+import com.scwang.smartrefresh.layout.SmartRefreshLayout;
 
 import ceui.lisa.R;
+import ceui.lisa.activities.MainActivity;
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.activities.TemplateActivity;
-import ceui.lisa.databinding.FragmentCenterBinding;
-import ceui.lisa.http.NullCtrl;
-import ceui.lisa.http.Retro;
-import ceui.lisa.model.ListIllust;
-import ceui.lisa.transformer.GalleryTransformer;
-import ceui.lisa.utils.Dev;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.schedulers.Schedulers;
+import ceui.lisa.databinding.FragmentNewCenterBinding;
+import ceui.lisa.utils.Common;
 
-public class FragmentCenter extends BaseFragment<FragmentCenterBinding> {
-
-    private boolean isLoad = false;
+public class FragmentCenter extends SwipeFragment<FragmentNewCenterBinding> {
 
     @Override
     public void initLayout() {
-        mLayoutID = R.layout.fragment_center;
+        mLayoutID = R.layout.fragment_new_center;
     }
 
     @Override
-    public void initView(View view) {
-        FalsifyHeader falsifyHeader = new FalsifyHeader(mContext);
-        falsifyHeader.setPrimaryColors(getResources().getColor(R.color.colorPrimary));
-        falsifyHeader.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
-        baseBind.refreshLayout.setRefreshHeader(falsifyHeader);
-        baseBind.refreshLayout.setRefreshFooter(new FalsifyFooter(mContext));
+    protected void initView() {
+        ViewGroup.LayoutParams headParams = baseBind.head.getLayoutParams();
+        headParams.height = Shaft.statusHeight;
+        baseBind.head.setLayoutParams(headParams);
+
+        baseBind.toolbar.inflateMenu(R.menu.fragment_left);
+        baseBind.toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mActivity instanceof MainActivity) {
+                    ((MainActivity) mActivity).getDrawer().openDrawer(GravityCompat.START, true);
+                }
+            }
+        });
+        baseBind.toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                if (item.getItemId() == R.id.action_search) {
+                    Intent intent = new Intent(mContext, TemplateActivity.class);
+                    intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "搜索");
+                    startActivity(intent);
+                    return true;
+                }
+                return false;
+            }
+        });
+
         baseBind.manga.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -54,68 +66,40 @@ public class FragmentCenter extends BaseFragment<FragmentCenterBinding> {
             public void onClick(View v) {
                 Intent intent = new Intent(mContext, TemplateActivity.class);
                 intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "推荐小说");
+                intent.putExtra("hideStatusBar", false);
                 startActivity(intent);
             }
         });
 
-        baseBind.viewPager.getViewTreeObserver().addOnGlobalLayoutListener(
-                new ViewTreeObserver.OnGlobalLayoutListener() {
+        baseBind.walkThrough.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onGlobalLayout() {
-                ViewGroup.LayoutParams params = baseBind.wtfHead.getLayoutParams();
-                params.height = baseBind.viewPager.getTop() +
-                        (baseBind.viewPager.getBottom() - baseBind.viewPager.getTop()) / 2;
-                baseBind.wtfHead.setLayoutParams(params);
-                baseBind.viewPager.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+            public void onClick(View v) {
+                Intent intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "画廊");
+                startActivity(intent);
+            }
+        });
+        baseBind.followNovels.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "关注者的小说");
+                startActivity(intent);
             }
         });
     }
 
     @Override
-    void initData() {
-        if (Dev.isDev) {
+    public void lazyData() {
+        FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
 
-        } else {
-            Retro.getAppApi().getLoginBg(Shaft.sUserModel.getResponse().getAccess_token())
-                    .subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new NullCtrl<ListIllust>() {
-                        @Override
-                        public void success(ListIllust listIllust) {
-                            baseBind.viewPager.setAdapter(new FragmentPagerAdapter(getChildFragmentManager()) {
-                                @NonNull
-                                @Override
-                                public Fragment getItem(int position) {
-                                    int index = position % listIllust.getList().size();
-                                    return FragmentImage.newInstance(listIllust.getIllusts()
-                                            .get(index));
-                                }
-
-                                @Override
-                                public int getCount() {
-                                    return Integer.MAX_VALUE;
-                                }
-                            });
-                            baseBind.viewPager.setPageTransformer(true, new GalleryTransformer());
-                            baseBind.viewPager.setOffscreenPageLimit(3);
-                            baseBind.viewPager.setCurrentItem(listIllust.getList().size());
-                        }
-                    });
-        }
+        FragmentPivisionHorizontal pivisionFragment = new FragmentPivisionHorizontal();
+        transaction.add(R.id.fragment_pivision, pivisionFragment, "FragmentPivisionHorizontal");
+        transaction.commitNow();
     }
 
     @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-
-        if (isVisibleToUser) {
-            if (!isLoad) {
-                FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
-                transaction.add(R.id.fragment_pivision, new FragmentPivisionHorizontal());
-                transaction.commit();
-                isLoad = true;
-            }
-        } else {
-        }
+    public SmartRefreshLayout getSmartRefreshLayout() {
+        return baseBind.refreshLayout;
     }
 }

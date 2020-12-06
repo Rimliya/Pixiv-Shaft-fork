@@ -5,8 +5,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.ContextWrapper;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -19,21 +17,29 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
-
-import com.qmuiteam.qmui.widget.dialog.QMUITipDialog;
+import com.facebook.rebound.SimpleSpringListener;
+import com.facebook.rebound.Spring;
+import com.facebook.rebound.SpringChain;
+import com.qmuiteam.qmui.skin.QMUISkinManager;
+import com.qmuiteam.qmui.widget.dialog.QMUIDialog;
+import com.qmuiteam.qmui.widget.dialog.QMUIDialogAction;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.ArrayList;
+import java.util.List;
 
 import ceui.lisa.R;
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.activities.TemplateActivity;
 import ceui.lisa.activities.UserActivity;
+import ceui.lisa.activities.BaseActivity;
 import ceui.lisa.models.UserContainer;
 import okhttp3.MediaType;
 import okhttp3.Response;
@@ -52,6 +58,10 @@ public class Common {
             }
         }
         return true;
+    }
+
+    public static boolean isEmpty(List<?> list) {
+        return list == null || list.size() == 0;
     }
 
     public static void hideKeyboard(Activity activity) {
@@ -98,17 +108,19 @@ public class Common {
         return data;
     }
 
+    public void showUriDialog(BaseActivity<?> activity) {
+
+    }
+
     public static <T> void showLog(T t) {
         Log.d("==SHAFT== log ==> ", String.valueOf(t));
     }
 
     public static <T> void showToast(T t) {
-        if (toast == null) {
-            toast = Toast.makeText(Shaft.getContext(), String.valueOf(t), Toast.LENGTH_SHORT);
-        } else {
+        if (toast != null) {
             toast.cancel();
-            toast = Toast.makeText(Shaft.getContext(), String.valueOf(t), Toast.LENGTH_SHORT);
         }
+        toast = Toast.makeText(Shaft.getContext(), String.valueOf(t), Toast.LENGTH_SHORT);
         View view = LayoutInflater.from(Shaft.getContext()).inflate(R.layout.toast_item, null);
         TextView textView = view.findViewById(R.id.toast_text);
         textView.setText(String.valueOf(t));
@@ -116,37 +128,40 @@ public class Common {
         toast.show();
     }
 
-    public static <T> void showToast(T t, View view) {
-        showToast(t, view, QMUITipDialog.Builder.ICON_TYPE_SUCCESS);
-    }
 
     //2成功， 3失败， 4info
-    public static <T> void showToast(T t, View view, int type) {
-        final QMUITipDialog tipDialog = new QMUITipDialog.Builder(view.getContext())
-                .setIconType(type)
-                .setTipWord(String.valueOf(t))
-                .create();
-        tipDialog.show();
-        view.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if(tipDialog.isShowing()) { //check if dialog is showing.
-
-                    //get the Context object that was used to great the dialog
-                    Context context = ((ContextWrapper)tipDialog.getContext()).getBaseContext();
-
-                    //if the Context used here was an activity AND it hasn't been finished or destroyed
-                    //then dismiss it
-                    if(context instanceof Activity) {
-                        if(!((Activity)context).isFinishing() && !((Activity)context).isDestroyed()) {
-                            tipDialog.dismiss();
-                        }
-                    } else {
-                        tipDialog.dismiss();
-                    }
-                }
+    public static <T> void showToast(T t, int type) {
+        if (type == 2) {
+            if (toast != null) {
+                toast.cancel();
             }
-        }, 1000L);
+            toast = Toast.makeText(Shaft.getContext(), String.valueOf(t), Toast.LENGTH_SHORT);
+            View v = LayoutInflater.from(Shaft.getContext()).inflate(R.layout.toast_item_green, null);
+            TextView textView = v.findViewById(R.id.toast_text);
+            textView.setText(String.valueOf(t));
+            toast.setView(v);
+            toast.show();
+        } else if (type == 3) {
+            if (toast != null) {
+                toast.cancel();
+            }
+            toast = Toast.makeText(Shaft.getContext(), String.valueOf(t), Toast.LENGTH_SHORT);
+            View v = LayoutInflater.from(Shaft.getContext()).inflate(R.layout.toast_item_green_red, null);
+            TextView textView = v.findViewById(R.id.toast_text);
+            textView.setText(String.valueOf(t));
+            toast.setView(v);
+            toast.show();
+        } else if (type == 4) {
+            if (toast != null) {
+                toast.cancel();
+            }
+            toast = Toast.makeText(Shaft.getContext(), String.valueOf(t), Toast.LENGTH_SHORT);
+            View v = LayoutInflater.from(Shaft.getContext()).inflate(R.layout.toast_item_gray, null);
+            TextView textView = v.findViewById(R.id.toast_text);
+            textView.setText(String.valueOf(t));
+            toast.setView(v);
+            toast.show();
+        }
     }
 
     public static String getAppVersionCode(Context context) {
@@ -175,20 +190,6 @@ public class Common {
             Log.e("VersionInfo", "Exception", e);
         }
         return versionName;
-    }
-
-    public static void success(Context context, String s, View view) {
-        QMUITipDialog dialog = new QMUITipDialog.Builder(context)
-                .setIconType(QMUITipDialog.Builder.ICON_TYPE_SUCCESS)
-                .setTipWord(s)
-                .create();
-        dialog.show();
-        view.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                dialog.dismiss();
-            }
-        }, 1500);
     }
 
     public static <T> void showToast(T t, boolean isLong) {
@@ -222,32 +223,62 @@ public class Common {
         return TextUtils.isEmpty(before) ? Shaft.getContext().getString(R.string.no_info) : before;
     }
 
+    public static String checkEmpty(EditText before) {
+        if (before != null && before.getText() != null && !TextUtils.isEmpty(before.getText().toString())) {
+            return before.getText().toString();
+        } else {
+            return "";
+        }
+    }
+
+    public static void animate(LinearLayout linearLayout) {
+        SpringChain springChain = SpringChain.create(40, 8, 60, 10);
+
+        int childCount = linearLayout.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            final View view = linearLayout.getChildAt(i);
+
+            final int position = i;
+            springChain.addSpring(new SimpleSpringListener() {
+                @Override
+                public void onSpringUpdate(Spring spring) {
+                    view.setTranslationX((float) spring.getCurrentValue());
+                }
+            });
+        }
+
+        List<Spring> springs = springChain.getAllSprings();
+        for (int i = 0; i < springs.size(); i++) {
+            springs.get(i).setCurrentValue(400);
+        }
+        springChain.setControlSpringIndex(0).getControlSpring().setEndValue(0);
+    }
+
     public static void createDialog(Context context){
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("欢迎使用！");
-        builder.setMessage(context.getString(R.string.dont_catch_me));
-        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Local.setBoolean(Params.SHOW_DIALOG, true);
-            }
-        });
-        builder.setNegativeButton("确定且不再提示", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Local.setBoolean(Params.SHOW_DIALOG, false);
-            }
-        });
-        AlertDialog alertDialog = builder.create();
-        Window window = alertDialog.getWindow();
+        QMUIDialog qmuiDialog = new QMUIDialog.MessageDialogBuilder(context)
+                .setTitle(context.getString(R.string.string_188))
+                .setMessage(context.getString(R.string.dont_catch_me))
+                .setSkinManager(QMUISkinManager.defaultInstance(context))
+                .addAction(context.getString(R.string.string_189), new QMUIDialogAction.ActionListener() {
+                    @Override
+                    public void onClick(QMUIDialog dialog, int index) {
+                        Local.setBoolean(Params.SHOW_DIALOG, false);
+                        dialog.dismiss();
+                    }
+                })
+                .addAction(context.getString(R.string.string_190), new QMUIDialogAction.ActionListener() {
+                    @Override
+                    public void onClick(QMUIDialog dialog, int index) {
+                        Local.setBoolean(Params.SHOW_DIALOG, true);
+                        dialog.dismiss();
+                    }
+                })
+                .create();
+        Window window = qmuiDialog.getWindow();
         if (window != null) {
             window.setWindowAnimations(R.style.dialog_animation_scale);
         }
-        alertDialog.show();
-        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                .setTextColor(context.getResources().getColor(R.color.colorPrimary));
-        alertDialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-                .setTextColor(context.getResources().getColor(R.color.colorPrimary));
+        qmuiDialog.show();
     }
 
     public static String getResponseBody(Response response) {
@@ -281,4 +312,24 @@ public class Common {
     }
 
 
+    public static <T> String cutToJson(List<T> from) {
+        if (isEmpty(from)) {
+            return "";
+        }
+
+        if (from.size() > 5) {
+            List<T> temp = new ArrayList<>();
+            for (int i = 0; i < 5; i++) {
+                temp.add(from.get(i));
+            }
+            return Shaft.sGson.toJson(temp);
+        } else {
+            return Shaft.sGson.toJson(from);
+        }
+    }
+
+
+    public static String getPathByName(String name) {
+        return Shaft.getContext().getExternalCacheDir() + "/" + name;
+    }
 }

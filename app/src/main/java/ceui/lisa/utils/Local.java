@@ -1,9 +1,6 @@
 package ceui.lisa.utils;
 
-import android.content.Context;
 import android.content.SharedPreferences;
-
-import com.google.gson.Gson;
 
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.models.UserModel;
@@ -16,10 +13,6 @@ public class Local {
 
     public static void saveUser(UserModel userModel) {
         if (userModel != null) {
-            String token = userModel.getResponse().getAccess_token();
-            if (!token.contains("Bearer ")) {
-                userModel.getResponse().setAccess_token("Bearer " + token);
-            }
             String userString = Shaft.sGson.toJson(userModel, UserModel.class);
             SharedPreferences.Editor editor = Shaft.sPreferences.edit();
             editor.putString(USER, userString);

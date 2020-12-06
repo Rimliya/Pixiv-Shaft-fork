@@ -28,8 +28,8 @@ import ceui.lisa.utils.Params;
 //已下载
 public class DownloadedAdapter extends BaseAdapter<DownloadEntity, RecyViewHistoryBinding> {
 
-    private int imageSize = 0;
-    private int novelImageSize = 0;
+    private int imageSize;
+    private int novelImageSize;
     private SimpleDateFormat mTime = new SimpleDateFormat("MM月dd日 HH: mm");
 
     public DownloadedAdapter(List<DownloadEntity> targetList, Context context) {
@@ -63,7 +63,7 @@ public class DownloadedAdapter extends BaseAdapter<DownloadEntity, RecyViewHisto
             bindView.baseBind.author.setText("by: " + current.getUser().getName());
             bindView.baseBind.time.setText(mTime.format(allIllust.get(position).getDownloadTime()));
 
-            bindView.baseBind.pSize.setText("小说");
+            bindView.baseBind.pSize.setText(R.string.string_171);
 
             if (mOnItemClickListener != null) {
                 bindView.itemView.setOnClickListener(v -> {
@@ -81,10 +81,17 @@ public class DownloadedAdapter extends BaseAdapter<DownloadEntity, RecyViewHisto
             bindView.baseBind.illustImage.setLayoutParams(params);
 
             IllustsBean currentIllust = Shaft.sGson.fromJson(allIllust.get(position).getIllustGson(), IllustsBean.class);
-            Glide.with(mContext)
-                    .load(allIllust.get(position).getFilePath())
-                    .placeholder(R.color.light_bg)
-                    .into(bindView.baseBind.illustImage);
+            if (currentIllust.isGif()) {
+                Glide.with(mContext)
+                        .load(currentIllust.getImage_urls().getMedium())
+                        .placeholder(R.color.light_bg)
+                        .into(bindView.baseBind.illustImage);
+            } else {
+                Glide.with(mContext)
+                        .load(allIllust.get(position).getFilePath())
+                        .placeholder(R.color.light_bg)
+                        .into(bindView.baseBind.illustImage);
+            }
             bindView.baseBind.title.setText(allIllust.get(position).getFileName());
             bindView.baseBind.author.setText("by: " + currentIllust.getUser().getName());
             bindView.baseBind.time.setText(mTime.format(allIllust.get(position).getDownloadTime()));

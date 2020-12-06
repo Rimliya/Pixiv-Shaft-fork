@@ -1,14 +1,11 @@
 package ceui.lisa.core;
 
-import android.content.Context;
 import android.text.TextUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import ceui.lisa.database.AppDatabase;
-import ceui.lisa.database.UUIDEntity;
 import ceui.lisa.models.IllustsBean;
 import ceui.lisa.utils.Common;
 
@@ -38,25 +35,6 @@ public class Container {
         Common.showLog("Container addPage " + pageData.getUUID());
     }
 
-    /**
-     * 用 Room数据库 存储，数据一直在不会丢失
-     *
-     * @param context    context
-     * @param uuidEntity 一个插画列表
-     */
-    public void addPageToSQL(Context context, UUIDEntity uuidEntity) {
-        if (uuidEntity == null || context == null) {
-            return;
-        }
-
-        if (TextUtils.isEmpty(uuidEntity.getUuid())) {
-            return;
-        }
-
-        AppDatabase.getAppDatabase(context).searchDao().insertListWithUUID(uuidEntity);
-        Common.showLog("Container addPage " + uuidEntity.getUuid());
-    }
-
     public IDWithList<IllustsBean> getPage(String uuid) {
         Common.showLog("Container getPage " + uuid);
         if (TextUtils.isEmpty(uuid)) {
@@ -68,15 +46,6 @@ public class Container {
         }
 
         return pages.get(uuid);
-    }
-
-    public IDWithList<IllustsBean> getPage(Context context, String uuid) {
-        Common.showLog("Container getPage " + uuid);
-        if (TextUtils.isEmpty(uuid) || context == null) {
-            return null;
-        }
-
-        return AppDatabase.getAppDatabase(context).searchDao().getListByUUID(uuid);
     }
 
     public List<PageData> getAll() {
@@ -106,7 +75,7 @@ public class Container {
     }
 
     private static class SingleTonHolder {
-        private static Container INSTANCE = new Container();
+        private static final Container INSTANCE = new Container();
     }
 
     public static Container get() {

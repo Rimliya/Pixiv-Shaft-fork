@@ -23,8 +23,11 @@ import ceui.lisa.view.LinearItemHorizontalDecoration;
 
 public class IllustHeader extends ViewHolder<RecyRecmdHeaderBinding> {
 
-    public IllustHeader(RecyRecmdHeaderBinding bindView) {
+    private String type = "";
+
+    public IllustHeader(RecyRecmdHeaderBinding bindView, String type) {
         super(bindView);
+        this.type = type;
     }
 
     public void show(Context context, List<IllustsBean> illustsBeans) {
@@ -34,20 +37,13 @@ public class IllustHeader extends ViewHolder<RecyRecmdHeaderBinding> {
         baseBind.topRela.startAnimation(animation);
         RAdapter adapter = new RAdapter(illustsBeans, context);
         adapter.setOnItemClickListener((v, position, viewType) -> {
-            final String uuid = UUID.randomUUID().toString();
-            final PageData pageData = new PageData(uuid, illustsBeans);
+            final PageData pageData = new PageData(illustsBeans);
             Container.get().addPageToMap(pageData);
 
             Intent intent = new Intent(context, VActivity.class);
             intent.putExtra(Params.POSITION, position);
-            intent.putExtra(Params.PAGE_UUID, uuid);
+            intent.putExtra(Params.PAGE_UUID, pageData.getUUID());
             context.startActivity(intent);
-
-
-//            DataChannel.get().setIllustList(illustsBeans);
-//            Intent intent = new Intent(context, ViewPagerActivity.class);
-//            intent.putExtra("position", position);
-//            context.startActivity(intent);
         });
         baseBind.ranking.setAdapter(adapter);
     }
@@ -56,7 +52,7 @@ public class IllustHeader extends ViewHolder<RecyRecmdHeaderBinding> {
         baseBind.topRela.setVisibility(View.GONE);
         baseBind.seeMore.setOnClickListener(v -> {
             Intent intent = new Intent(context, RankActivity.class);
-            intent.putExtra("dataType", "插画");
+            intent.putExtra("dataType", type);
             context.startActivity(intent);
         });
         baseBind.ranking.addItemDecoration(new LinearItemHorizontalDecoration(DensityUtil.dp2px(8.0f)));

@@ -6,7 +6,6 @@ import java.io.File;
 
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.utils.Common;
-import ceui.lisa.utils.Dev;
 
 public abstract class ImageSaver {
 
@@ -31,8 +30,7 @@ public abstract class ImageSaver {
             mime[0] = "image/png";
         }
         MediaScannerConnection.scanFile(
-                Shaft.getContext(), path, mime, (path1, uri) -> {
-                }
+                Shaft.getContext(), path, mime, (path1, uri) -> { }
         );
     }
 

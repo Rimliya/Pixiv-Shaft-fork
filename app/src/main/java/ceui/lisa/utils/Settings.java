@@ -6,12 +6,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.blankj.utilcode.util.PathUtils;
 
-import ceui.lisa.fragments.FragmentFilter;
 import ceui.lisa.helper.ThemeHelper;
 
 public class Settings {
 
-    public static final String[] ALL_LANGUAGE = new String[]{"简体中文", "日本語", "English", "繁體中文"};
+    public static final String[] ALL_LANGUAGE = new String[]{"简体中文", "日本語", "English", "繁體中文", "Russian"};
 
     //只包含1P图片的下载路径
     public static final String FILE_PATH_SINGLE = PathUtils.getExternalPicturesPath() + "/ShaftImages";
@@ -20,7 +19,7 @@ public class Settings {
     public static final String FILE_GIF_PATH = PathUtils.getExternalDownloadsPath();
 
     //log日志，
-    public static final String FILE_LOG_PATH = PathUtils.getExternalDownloadsPath();
+    public static final String FILE_LOG_PATH = PathUtils.getExternalDownloadsPath() + "/ShaftFiles";
 
     //下载的GIF 压缩包解压之后的结果存放在这里
     public static final String FILE_GIF_CHILD_PATH = PathUtils.getExternalAppCachePath();
@@ -30,6 +29,16 @@ public class Settings {
 
     //WEB下载
     public static final String WEB_DOWNLOAD_PATH = PathUtils.getExternalPicturesPath() + "/ShaftWeb";
+
+    private int themeIndex;
+
+    public int getThemeIndex() {
+        return themeIndex;
+    }
+
+    public void setThemeIndex(int themeIndex) {
+        this.themeIndex = themeIndex;
+    }
 
     //瀑布流List点击动画
     private boolean mainListAnimate = true;
@@ -42,16 +51,16 @@ public class Settings {
     //设置页面进场动画
     private boolean settingsAnimate = true;
 
+    //屏蔽，不显示已收藏的作品，默认不屏蔽
+    private boolean deleteStarIllust = false;
+
     //是否自动添加DNS，true开启直连  false自行代理
     private boolean autoFuckChina = true;
 
     private boolean relatedIllustNoLimit = true;
 
     //一级详情FragmentSingleIllust 图片显示原图
-    private boolean firstNewImageSize = true;
-
-    //屏蔽，不显示已收藏的作品，默认不屏蔽
-    private boolean deleteStarIllust = false;
+    private boolean useOriginalImage = false;
 
     //二级详情FragmentImageDetail 图片显示原图
     private boolean secondImageSize = true;
@@ -67,12 +76,18 @@ public class Settings {
 
     private boolean saveViewHistory = true;
 
-    private boolean doubleStaggerData = false;
+    //只允许一个任务处于下载中，用来保证下载顺序
+    private boolean singleDownloadTask = false;
 
     //作品详情使用新页面
     private boolean useFragmentIllust = true;
 
+    //个人中心使用新页面
+    private boolean useNewUserPage = true;
+
     private String illustPath = "";
+
+    private String novelPath = "";
 
     private String gifResultPath = "";
 
@@ -82,9 +97,15 @@ public class Settings {
 
     private String webDownloadPath = "";
 
+    private int novelHolderColor = 0;
+
     private boolean reverseDialogNeverShowAgain = false;
 
     private String appLanguage = "";
+
+    private String fileNameJson = "";
+
+    private String rootPathUri = "";
 
     public String getAppLanguage() {
         if(!TextUtils.isEmpty(appLanguage)){
@@ -92,6 +113,22 @@ public class Settings {
         } else {
             return ALL_LANGUAGE[0];
         }
+    }
+
+    public String getRootPathUri() {
+        return rootPathUri;
+    }
+
+    public void setRootPathUri(String rootPathUri) {
+        this.rootPathUri = rootPathUri;
+    }
+
+    public String getNovelPath() {
+        return TextUtils.isEmpty(novelPath) ? FILE_LOG_PATH : novelPath;
+    }
+
+    public void setNovelPath(String novelPath) {
+        this.novelPath = novelPath;
     }
 
     public void setAppLanguage(String appLanguage) {
@@ -110,14 +147,6 @@ public class Settings {
         ThemeHelper.applyTheme(activity, themeType);
     }
 
-    private String themeType = "";
-
-    //收藏量筛选搜索结果
-    private String searchFilter = "";
-
-    public Settings() {
-    }
-
     public boolean isDeleteStarIllust() {
         return deleteStarIllust;
     }
@@ -126,12 +155,13 @@ public class Settings {
         deleteStarIllust = pDeleteStarIllust;
     }
 
-    public boolean isDoubleStaggerData() {
-        return doubleStaggerData;
-    }
 
-    public void setDoubleStaggerData(boolean doubleStaggerData) {
-        this.doubleStaggerData = doubleStaggerData;
+    private String themeType = "";
+
+    //收藏量筛选搜索结果
+    private String searchFilter = "";
+
+    public Settings() {
     }
 
     public boolean isSaveViewHistory() {
@@ -200,11 +230,11 @@ public class Settings {
     }
 
     public boolean isFirstImageSize() {
-        return firstNewImageSize;
+        return useOriginalImage;
     }
 
     public void setFirstImageSize(boolean firstImageSize) {
-        this.firstNewImageSize = firstImageSize;
+        this.useOriginalImage = firstImageSize;
     }
 
     public boolean isSecondImageSize() {
@@ -271,10 +301,6 @@ public class Settings {
         this.trendsForPrivate = trendsForPrivate;
     }
 
-    public static String getLogPath(){
-        return FILE_LOG_PATH;
-    }
-
     public boolean isShowPixivDialog() {
         return showPixivDialog;
     }
@@ -297,5 +323,37 @@ public class Settings {
 
     public void setShowLikeButton(boolean pShowLikeButton) {
         showLikeButton = pShowLikeButton;
+    }
+
+    public String getFileNameJson() {
+        return fileNameJson;
+    }
+
+    public void setFileNameJson(String fileNameJson) {
+        this.fileNameJson = fileNameJson;
+    }
+
+    public boolean isSingleDownloadTask() {
+        return singleDownloadTask;
+    }
+
+    public void setSingleDownloadTask(boolean singleDownloadTask) {
+        this.singleDownloadTask = singleDownloadTask;
+    }
+
+    public int getNovelHolderColor() {
+        return novelHolderColor;
+    }
+
+    public void setNovelHolderColor(int novelHolderColor) {
+        this.novelHolderColor = novelHolderColor;
+    }
+
+    public boolean isUseNewUserPage() {
+        return useNewUserPage;
+    }
+
+    public void setUseNewUserPage(boolean useNewUserPage) {
+        this.useNewUserPage = useNewUserPage;
     }
 }

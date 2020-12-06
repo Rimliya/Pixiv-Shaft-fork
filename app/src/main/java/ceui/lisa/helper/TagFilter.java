@@ -9,16 +9,14 @@ import ceui.lisa.activities.Shaft;
 import ceui.lisa.database.AppDatabase;
 import ceui.lisa.database.TagMuteEntity;
 import ceui.lisa.models.IllustsBean;
-import ceui.lisa.models.MutedHistory;
 import ceui.lisa.models.TagsBean;
-import ceui.lisa.utils.Common;
 
 public class TagFilter {
 
-    public static void judge(IllustsBean illustsBean) {
+    public static boolean judge(IllustsBean illustsBean) {
         String tagString = illustsBean.getTagString();
         if (TextUtils.isEmpty(tagString)) {
-            return;
+            return false;
         }
 
         List<TagsBean> temp = getMutedTags();
@@ -26,9 +24,10 @@ public class TagFilter {
             String name = "*#" + bean.getName() + ",";
             if (tagString.contains(name)) {
                 illustsBean.setShield(true);
-                break;
+                return true;
             }
         }
+        return false;
     }
 
     public static List<TagsBean> getMutedTags() {

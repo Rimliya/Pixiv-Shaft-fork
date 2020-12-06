@@ -2,29 +2,28 @@ package ceui.lisa.http;
 
 import android.text.TextUtils;
 
-import com.google.gson.Gson;
-
 import java.io.IOException;
 
 import ceui.lisa.activities.Shaft;
+import ceui.lisa.core.TryCatchObserver;
 import ceui.lisa.models.Error500;
 import ceui.lisa.models.Error500Obj;
 import ceui.lisa.models.ErrorResponse;
+import ceui.lisa.models.ErrorResponse2;
 import ceui.lisa.utils.Common;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import retrofit2.HttpException;
 
-public abstract class ErrorCtrl<T> implements Observer<T> {
+public abstract class ErrorCtrl<T> extends TryCatchObserver<T> {
 
     @Override
-    public void onSubscribe(Disposable d) {
+    public void subscribe(Disposable d) {
 
     }
 
     @Override
-    public void onError(Throwable e) {
-        e.printStackTrace();
+    public void error(Throwable e) {
         if (e instanceof HttpException) {
             try {
                 HttpException httpException = (HttpException) e;
@@ -52,6 +51,15 @@ public abstract class ErrorCtrl<T> implements Observer<T> {
                                 }
                             } else {
                                 Common.showToast(e.toString());
+                            }
+                        }
+                    } else if(responseString.contains("invalid_grant")) {
+                        ErrorResponse2 response = Shaft.sGson.fromJson(responseString, ErrorResponse2.class);
+                        if (response != null) {
+                            if (response.getErrors() != null && response.getErrors().getSystem() != null) {
+                                if (!TextUtils.isEmpty(response.getErrors().getSystem().getMessage())) {
+                                    Common.showToast(response.getErrors().getSystem().getMessage());
+                                }
                             }
                         }
                     } else {
@@ -92,7 +100,7 @@ public abstract class ErrorCtrl<T> implements Observer<T> {
     }
 
     @Override
-    public void onComplete() {
-        Common.showLog(getClass().getSimpleName() + " onComplete() ");
+    public void complete() {
+
     }
 }

@@ -19,7 +19,6 @@ import ceui.lisa.core.ImgGetter;
 import ceui.lisa.databinding.RecyCommentListBinding;
 import ceui.lisa.models.CommentsBean;
 import ceui.lisa.utils.Common;
-import ceui.lisa.utils.Emoji;
 import ceui.lisa.utils.GlideUtil;
 
 /**
@@ -89,6 +88,9 @@ public class CommentAdapter extends BaseAdapter<CommentsBean, RecyCommentListBin
 
         if (mOnItemClickListener != null) {
             bindView.itemView.setOnClickListener(v ->
+                    mOnItemClickListener.onItemClick(v, position, 0));
+
+            bindView.baseBind.content.setOnClickListener(v ->
                     mOnItemClickListener.onItemClick(v, position, 0));
 
             bindView.baseBind.userHead.setOnClickListener(v ->

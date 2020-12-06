@@ -2,19 +2,15 @@ package ceui.lisa.fragments;
 
 import android.os.Bundle;
 
-import ceui.lisa.activities.Shaft;
 import ceui.lisa.adapters.BaseAdapter;
 import ceui.lisa.adapters.IAdapter;
 import ceui.lisa.core.RemoteRepo;
 import ceui.lisa.databinding.FragmentBaseListBinding;
 import ceui.lisa.databinding.RecyIllustStaggerBinding;
-import ceui.lisa.http.Retro;
 import ceui.lisa.model.ListIllust;
 import ceui.lisa.models.IllustsBean;
+import ceui.lisa.repo.RankIllustRepo;
 import ceui.lisa.utils.Params;
-import io.reactivex.Observable;
-
-import static ceui.lisa.activities.Shaft.sUserModel;
 
 /**
  * illust / manga 排行榜都用这个
@@ -57,19 +53,7 @@ public class FragmentRankIllust extends NetListFragment<FragmentBaseListBinding,
 
     @Override
     public RemoteRepo<ListIllust> repository() {
-        return new RemoteRepo<ListIllust>() {
-            @Override
-            public Observable<ListIllust> initApi() {
-                return Retro.getAppApi().getRank(Shaft.sUserModel.getResponse().getAccess_token(),
-                        isManga ? API_TITLES_MANGA[mIndex] : API_TITLES[mIndex], queryDate);
-            }
-
-            @Override
-            public Observable<ListIllust> initNextApi() {
-                return Retro.getAppApi().getNextIllust(sUserModel.getResponse().getAccess_token(),
-                        mModel.getNextUrl());
-            }
-        };
+        return new RankIllustRepo(isManga ? API_TITLES_MANGA[mIndex] : API_TITLES[mIndex], queryDate);
     }
 
     @Override

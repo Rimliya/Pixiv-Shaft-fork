@@ -12,6 +12,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 
+import com.blankj.utilcode.util.BarUtils;
 import com.facebook.rebound.SimpleSpringListener;
 import com.facebook.rebound.Spring;
 import com.facebook.rebound.SpringConfig;
@@ -26,7 +27,6 @@ import ceui.lisa.activities.TemplateActivity;
 import ceui.lisa.database.AppDatabase;
 import ceui.lisa.database.UserEntity;
 import ceui.lisa.databinding.ActivityLoginBinding;
-import ceui.lisa.http.ErrorCtrl;
 import ceui.lisa.http.NullCtrl;
 import ceui.lisa.http.Retro;
 import ceui.lisa.models.SignResponse;
@@ -67,7 +67,7 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
     }
 
     @Override
-    public void initView(View view) {
+    public void initView() {
         baseBind.toolbar.setPadding(0, Shaft.statusHeight, 0, 0);
         baseBind.toolbar.inflateMenu(R.menu.login_menu);
         baseBind.toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
@@ -83,7 +83,7 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
                     if (userJson != null
                             && !TextUtils.isEmpty(userJson)
                             && userJson.contains(Params.USER_KEY)) {
-                        Common.showToast("导入成功", baseBind.toolbar);
+                        Common.showToast("导入成功", 2);
                         UserModel exportUser = Shaft.sGson.fromJson(userJson, UserModel.class);
 
                         String pwd = exportUser.getResponse().getUser().getPassword();
@@ -91,6 +91,7 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
                         if (!TextUtils.isEmpty(pwd) && pwd.startsWith(Params.SECRET_PWD_KEY)) {
                             String secret = pwd.substring(Params.SECRET_PWD_KEY.length());
                             String realPwd = Base64Util.decode(secret);
+                            Common.showLog(className + "real password: " + realPwd);
                             exportUser.getResponse().getUser().setPassword(realPwd);
                         }
                         Local.saveUser(exportUser);
@@ -100,7 +101,7 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
                         MainActivity.newInstance(intent, mContext);
                         mActivity.finish();
                     } else {
-                        Common.showToast("剪贴板无用户信息", baseBind.toolbar, 3);
+                        Common.showToast("剪贴板无用户信息", 3);
                     }
                     return true;
                 }
@@ -144,10 +145,10 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
                     if (baseBind.password.getText().toString().length() != 0) {
                         login(baseBind.userName.getText().toString(), baseBind.password.getText().toString());
                     } else {
-                        Common.showToast("请输入密码", baseBind.login, 3);
+                        Common.showToast("请输入密码", 3);
                     }
                 } else {
-                    Common.showToast("请输入用户名", baseBind.login, 3);
+                    Common.showToast("请输入用户名", 3);
                 }
             }
         });
@@ -157,7 +158,7 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
                 if (baseBind.signUserName.getText().toString().length() != 0) {
                     sign();
                 } else {
-                    Common.showToast("请输入用户名", baseBind.sign, 3);
+                    Common.showToast("请输入用户名", 3);
                 }
             }
         });
@@ -208,7 +209,7 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
     }
 
     @Override
-    void initData() {
+    protected void initData() {
         if (Local.getBoolean(Params.SHOW_DIALOG, true)) {
             Common.createDialog(mContext);
         }
@@ -274,20 +275,18 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
         Retro.getSignApi().pixivSign(SIGN_TOKEN, baseBind.signUserName.getText().toString(), SIGN_REF)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new ErrorCtrl<SignResponse>() {
+                .subscribe(new NullCtrl<SignResponse>() {
                     @Override
-                    public void onNext(SignResponse signResponse) {
-                        if (signResponse != null) {
-                            if (signResponse.isError()) {
-                                if (!TextUtils.isEmpty(signResponse.getMessage())) {
-                                    Common.showToast(signResponse.getMessage());
-                                } else {
-                                    Common.showToast("未知错误");
-                                }
-                                baseBind.progress.setVisibility(View.INVISIBLE);
+                    public void success(SignResponse signResponse) {
+                        if (signResponse.isError()) {
+                            if (!TextUtils.isEmpty(signResponse.getMessage())) {
+                                Common.showToast(signResponse.getMessage());
                             } else {
-                                login(signResponse.getBody().getUser_account(), signResponse.getBody().getPassword());
+                                Common.showToast("未知错误");
                             }
+                            baseBind.progress.setVisibility(View.INVISIBLE);
+                        } else {
+                            login(signResponse.getBody().getUser_account(), signResponse.getBody().getPassword());
                         }
                     }
                 });
@@ -325,7 +324,7 @@ public class FragmentLogin extends BaseFragment<ActivityLoginBinding> {
                         baseBind.progress.setVisibility(View.INVISIBLE);
                         if (isAdded()) {
                             Intent intent = new Intent(mContext, MainActivity.class);
-                            requireActivity().startActivity(intent);
+                            mActivity.startActivity(intent);
                             mActivity.finish();
                         }
                     }

@@ -5,15 +5,13 @@ import android.content.IntentFilter;
 import android.text.TextUtils;
 import android.view.View;
 
+import androidx.annotation.CallSuper;
 import androidx.databinding.ViewDataBinding;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.scwang.smartrefresh.layout.footer.ClassicsFooter;
 import com.scwang.smartrefresh.layout.footer.FalsifyFooter;
 
-import java.util.List;
-
-import ceui.lisa.R;
 import ceui.lisa.adapters.BaseAdapter;
 import ceui.lisa.adapters.EventAdapter;
 import ceui.lisa.adapters.IAdapter;
@@ -31,9 +29,9 @@ import ceui.lisa.utils.Params;
 /**
  * 联网获取xx列表，
  *
- * @param <Layout>     这个列表的LayoutBinding
- * @param <Response>   这次请求的Response
- * @param <Item>       这个列表的单个Item实体类
+ * @param <Layout>   这个列表的LayoutBinding
+ * @param <Response> 这次请求的Response
+ * @param <Item>     这个列表的单个Item实体类
  */
 public abstract class NetListFragment<Layout extends ViewDataBinding,
         Response extends ListShow<Item>, Item> extends ListFragment<Layout, Item> {
@@ -44,31 +42,40 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
 
     @Override
     public void fresh() {
-        if (mRemoteRepo.initApi() != null) {
+        if (!mRemoteRepo.localData()) {
+            emptyRela.setVisibility(View.INVISIBLE);
             mRemoteRepo.getFirstData(new NullCtrl<Response>() {
                 @Override
                 public void success(Response response) {
-                    mResponse = response;
-                    onResponse(mResponse);
-                    if (response.getList() != null && response.getList().size() != 0) {
-                        List<Item> firstList = response.getList();
-                        beforeFirstLoad(firstList);
-                        if (mModel != null) {
-                            mModel.load(firstList);
-                        }
-                        onFirstLoaded(firstList);
-                        mRecyclerView.setVisibility(View.VISIBLE);
-                        noData.setVisibility(View.INVISIBLE);
-                        mAdapter.notifyItemRangeInserted(getStartSize(), firstList.size());
-                    } else {
-                        mRecyclerView.setVisibility(View.INVISIBLE);
-                        noData.setVisibility(View.VISIBLE);
-                        noData.setImageResource(R.mipmap.no_data_line);
+                    Common.showLog("trace 000");
+                    if (!isAdded()) {
+                        return;
                     }
-                    mModel.setNextUrl(response.getNextUrl());
-                    if (!TextUtils.isEmpty(response.getNextUrl())) {
+                    Common.showLog("trace 111");
+                    mResponse = response;
+                    tryCatchResponse(mResponse);
+                    if (!Common.isEmpty(mResponse.getList())) {
+                        Common.showLog("trace 222 " + mAdapter.getItemCount());
+                        beforeFirstLoad(mResponse.getList());
+                        mModel.load(mResponse.getList(), true);
+                        allItems = mModel.getContent();
+                        onFirstLoaded(mResponse.getList());
+                        mRecyclerView.setVisibility(View.VISIBLE);
+                        emptyRela.setVisibility(View.INVISIBLE);
+                        mAdapter.notifyItemRangeInserted(getStartSize(), mResponse.getList().size());
+                        Common.showLog("trace 777 " + mAdapter.getItemCount() + " allItems.size():" + allItems.size() + " modelSize:" + mModel.getContent().size());
+                    } else {
+                        Common.showLog("trace 333");
+                        mRecyclerView.setVisibility(View.INVISIBLE);
+                        emptyRela.setVisibility(View.VISIBLE);
+                    }
+                    Common.showLog("trace 444");
+                    mRemoteRepo.setNextUrl(mResponse.getNextUrl());
+                    if (!TextUtils.isEmpty(mResponse.getNextUrl())) {
+                        Common.showLog("trace 555");
                         mRefreshLayout.setRefreshFooter(new ClassicsFooter(mContext));
                     } else {
+                        Common.showLog("trace 666");
                         mRefreshLayout.setRefreshFooter(new FalsifyFooter(mContext));
                     }
                 }
@@ -82,34 +89,45 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
                 public void onError(Throwable e) {
                     super.onError(e);
                     mRecyclerView.setVisibility(View.INVISIBLE);
-                    noData.setVisibility(View.VISIBLE);
-                    noData.setImageResource(R.mipmap.no_data_line);
+                    emptyRela.setVisibility(View.VISIBLE);
                 }
             });
         } else {
-            if (className.equals("FragmentRecmdIllust ")) {
-                showDataBase();
-            }
+            showDataBase();
+        }
+    }
+
+    private void tryCatchResponse(Response response) {
+        try {
+            onResponse(response);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     @Override
     public void loadMore() {
-        if (!TextUtils.isEmpty(mModel.getNextUrl())) {
+        if (!TextUtils.isEmpty(mRemoteRepo.getNextUrl())) {
             mRemoteRepo.getNextData(new NullCtrl<Response>() {
                 @Override
                 public void success(Response response) {
-                    mResponse = response;
-                    if (response.getList() != null && response.getList().size() != 0) {
-                        List<Item> nextList = response.getList();
-                        beforeNextLoad(nextList);
-                        if (mModel != null) {
-                            mModel.load(nextList);
-                        }
-                        onNextLoaded(nextList);
-                        mAdapter.notifyItemRangeInserted(getStartSize(), nextList.size());
+                    if (!isAdded()) {
+                        return;
                     }
-                    mModel.setNextUrl(response.getNextUrl());
+                    mResponse = response;
+                    if (!Common.isEmpty(mResponse.getList())) {
+                        beforeNextLoad(mResponse.getList());
+                        mModel.load(mResponse.getList(), false);
+                        allItems = mModel.getContent();
+                        onNextLoaded(mResponse.getList());
+                        mAdapter.notifyItemRangeInserted(getStartSize(), mResponse.getList().size());
+                    }
+                    mRemoteRepo.setNextUrl(mResponse.getNextUrl());
+                    if (!TextUtils.isEmpty(mResponse.getNextUrl())) {
+                        mRefreshLayout.setRefreshFooter(new ClassicsFooter(mContext));
+                    } else {
+                        mRefreshLayout.setRefreshFooter(new FalsifyFooter(mContext));
+                    }
                 }
 
                 @Override
@@ -126,8 +144,9 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
     }
 
     @Override
-    void initData() {
-        mRemoteRepo = (RemoteRepo<Response>) mBaseRepo;
+    protected void initData() {
+        mRemoteRepo = (RemoteRepo<Response>) mModel.getBaseRepo();
+        super.initData();
     }
 
     /**
@@ -140,10 +159,9 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
 
     }
 
+    @CallSuper
     @Override
     public void onAdapterPrepared() {
-        super.onAdapterPrepared();
-
         //注册本地广播
         if (mAdapter instanceof IAdapter || mAdapter instanceof EventAdapter) {
             IntentFilter intentFilter = new IntentFilter();
