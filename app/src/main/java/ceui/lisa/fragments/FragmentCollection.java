@@ -12,13 +12,16 @@ import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
 import com.ToxicBakery.viewpager.transforms.DrawerTransformer;
-import com.blankj.utilcode.util.BarUtils;
-import com.google.android.material.tabs.TabLayout;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import ceui.lisa.R;
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.activities.TemplateActivity;
 import ceui.lisa.databinding.ViewpagerWithTablayoutBinding;
+import ceui.lisa.utils.MyOnTabSelectedListener;
 import ceui.lisa.utils.Params;
 
 import static ceui.lisa.activities.Shaft.sUserModel;
@@ -29,6 +32,7 @@ public class FragmentCollection extends BaseFragment<ViewpagerWithTablayoutBindi
     private String[] CHINESE_TITLES;
 
     private int type; //0插画收藏，1小说收藏，2关注
+    private final static Set<Integer> filterType = new HashSet<>(Arrays.asList(0,1));
 
     public static FragmentCollection newInstance(int type) {
         Bundle args = new Bundle();
@@ -52,9 +56,9 @@ public class FragmentCollection extends BaseFragment<ViewpagerWithTablayoutBindi
     public void initView() {
         if (type == 0) {
             allPages = new Fragment[]{
-                    FragmentLikeIllust.newInstance(sUserModel.getResponse().getUser().getId(),
-                            Params.TYPE_PUBLUC),
-                    FragmentLikeIllust.newInstance(sUserModel.getResponse().getUser().getId(),
+                    FragmentLikeIllust.newInstance(sUserModel.getUser().getId(),
+                            Params.TYPE_PUBLIC),
+                    FragmentLikeIllust.newInstance(sUserModel.getUser().getId(),
                             Params.TYPE_PRIVATE)
             };
             CHINESE_TITLES = new String[]{
@@ -63,9 +67,9 @@ public class FragmentCollection extends BaseFragment<ViewpagerWithTablayoutBindi
             };
         } else if (type == 1) {
             allPages = new Fragment[]{
-                    FragmentLikeNovel.newInstance(sUserModel.getResponse().getUser().getId(),
-                            Params.TYPE_PUBLUC, false),
-                    FragmentLikeNovel.newInstance(sUserModel.getResponse().getUser().getId(),
+                    FragmentLikeNovel.newInstance(sUserModel.getUser().getId(),
+                            Params.TYPE_PUBLIC, false),
+                    FragmentLikeNovel.newInstance(sUserModel.getUser().getId(),
                             Params.TYPE_PRIVATE, false)
             };
             CHINESE_TITLES = new String[]{
@@ -74,9 +78,9 @@ public class FragmentCollection extends BaseFragment<ViewpagerWithTablayoutBindi
             };
         } else if (type == 2) {
             allPages = new Fragment[]{
-                    FragmentFollowUser.newInstance(sUserModel.getResponse().getUser().getId(),
-                            Params.TYPE_PUBLUC, false),
-                    FragmentFollowUser.newInstance(sUserModel.getResponse().getUser().getId(),
+                    FragmentFollowUser.newInstance(sUserModel.getUser().getId(),
+                            Params.TYPE_PUBLIC, false),
+                    FragmentFollowUser.newInstance(sUserModel.getUser().getId(),
                             Params.TYPE_PRIVATE, false)
             };
             CHINESE_TITLES = new String[]{
@@ -85,7 +89,6 @@ public class FragmentCollection extends BaseFragment<ViewpagerWithTablayoutBindi
             };
         }
 
-        BarUtils.setStatusBarColor(mActivity, android.R.attr.colorPrimary);
         if (type == 0) {
             baseBind.toolbarTitle.setText(R.string.string_319);
         } else if (type == 1) {
@@ -100,8 +103,9 @@ public class FragmentCollection extends BaseFragment<ViewpagerWithTablayoutBindi
                 if (baseBind.viewPager.getCurrentItem() == 0) {
                     Intent intent = new Intent(mContext, TemplateActivity.class);
                     intent.putExtra(TemplateActivity.EXTRA_KEYWORD,
-                            Params.TYPE_PUBLUC);
+                            Params.TYPE_PUBLIC);
                     intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "按标签筛选");
+                    intent.putExtra(Params.DATA_TYPE, type);
                     startActivity(intent);
                     return true;
                 } else if (baseBind.viewPager.getCurrentItem() == 1) {
@@ -109,6 +113,7 @@ public class FragmentCollection extends BaseFragment<ViewpagerWithTablayoutBindi
                     intent.putExtra(TemplateActivity.EXTRA_KEYWORD,
                             Params.TYPE_PRIVATE);
                     intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "按标签筛选");
+                    intent.putExtra(Params.DATA_TYPE, type);
                     startActivity(intent);
                     return true;
                 }
@@ -135,7 +140,11 @@ public class FragmentCollection extends BaseFragment<ViewpagerWithTablayoutBindi
             }
         });
         baseBind.tabLayout.setupWithViewPager(baseBind.viewPager);
-        baseBind.toolbar.inflateMenu(R.menu.illust_filter);
+        MyOnTabSelectedListener listener = new MyOnTabSelectedListener(allPages);
+        baseBind.tabLayout.addOnTabSelectedListener(listener);
+        if (filterType.contains(type)) {
+            baseBind.toolbar.inflateMenu(R.menu.illust_filter);
+        }
         baseBind.viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int i, float v, int i1) {
@@ -145,7 +154,7 @@ public class FragmentCollection extends BaseFragment<ViewpagerWithTablayoutBindi
             @Override
             public void onPageSelected(int i) {
                 baseBind.toolbar.getMenu().clear();
-                if (type == 0) {
+                if (filterType.contains(type)) {
                     baseBind.toolbar.inflateMenu(R.menu.illust_filter);
                 }
             }

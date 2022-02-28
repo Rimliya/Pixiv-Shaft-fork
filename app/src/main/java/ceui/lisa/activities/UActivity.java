@@ -21,10 +21,12 @@ import ceui.lisa.http.NullCtrl;
 import ceui.lisa.http.Retro;
 import ceui.lisa.interfaces.Display;
 import ceui.lisa.models.UserDetailResponse;
+import ceui.lisa.models.UserFollowDetail;
 import ceui.lisa.utils.Common;
 import ceui.lisa.utils.GlideUtil;
 import ceui.lisa.utils.Params;
 import ceui.lisa.utils.PixivOperate;
+import ceui.lisa.viewmodel.AppLevelViewModel;
 import ceui.lisa.viewmodel.UserViewModel;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
@@ -84,24 +86,48 @@ public class UActivity extends BaseActivity<ActivityNewUserBinding> implements D
                 invoke(userDetailResponse);
             }
         });
+        Shaft.appViewModel.getFollowUserLiveData(userID).observe(this, new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer integer) {
+                updateFollowUserUI(integer);
+            }
+        });
     }
 
     @Override
     protected void initData() {
         baseBind.progress.setVisibility(View.VISIBLE);
-        Retro.getAppApi().getUserDetail(Shaft.sUserModel.getResponse().getAccess_token(), userID)
+        Retro.getAppApi().getUserDetail(Shaft.sUserModel.getAccess_token(), userID)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new NullCtrl<UserDetailResponse>() {
                     @Override
                     public void success(UserDetailResponse user) {
                         mUserViewModel.getUser().setValue(user);
+                        Shaft.appViewModel.updateFollowUserStatus(userID, user.getUser().isIs_followed() ? AppLevelViewModel.FollowUserStatus.FOLLOWED : AppLevelViewModel.FollowUserStatus.NOT_FOLLOW);
                     }
 
                     @Override
-                    public void must(boolean isSuccess) {
-                        super.must(isSuccess);
+                    public void must() {
                         baseBind.progress.setVisibility(View.INVISIBLE);
+                    }
+                });
+        Retro.getAppApi().getFollowDetail(Shaft.sUserModel.getAccess_token(), userID)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new NullCtrl<UserFollowDetail>() {
+                    @Override
+                    public void success(UserFollowDetail userFollowDetail) {
+                        //mUserViewModel.getUserFollowDetail().setValue(userFollowDetail);
+                        int followStatus = AppLevelViewModel.FollowUserStatus.NOT_FOLLOW;
+                        if (userFollowDetail.isPublicFollow()) {
+                            followStatus = AppLevelViewModel.FollowUserStatus.FOLLOWED_PUBLIC;
+                        } else if (userFollowDetail.isPrivateFollow()) {
+                            followStatus = AppLevelViewModel.FollowUserStatus.FOLLOWED_PRIVATE;
+                        } else if (userFollowDetail.isFollow()) {
+                            followStatus = AppLevelViewModel.FollowUserStatus.FOLLOWED;
+                        }
+                        Shaft.appViewModel.updateFollowUserStatus(userID, followStatus);
                     }
                 });
     }
@@ -116,40 +142,33 @@ public class UActivity extends BaseActivity<ActivityNewUserBinding> implements D
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, FragmentHolder.newInstance())
-                .commitNow();
+                .commitNowAllowingStateLoss();
 
         if (userID == Shaft.sUserModel.getUserId()) {
             baseBind.starUser.setVisibility(View.INVISIBLE);
         } else {
             baseBind.starUser.setVisibility(View.VISIBLE);
-            if (data.getUser().isIs_followed()) {
-                baseBind.starUser.setText(R.string.string_177);
-            } else {
-                baseBind.starUser.setText(R.string.string_178);
-            }
+
             baseBind.starUser.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (data.getUser().isIs_followed()) {
-                        baseBind.starUser.setText(R.string.string_178);
+                    Integer integerValue = Shaft.appViewModel.getFollowUserLiveData(userID).getValue();
+                    if (AppLevelViewModel.FollowUserStatus.isFollowed(integerValue)) {
                         PixivOperate.postUnFollowUser(data.getUser().getId());
                         data.getUser().setIs_followed(false);
                     } else {
-                        baseBind.starUser.setText(R.string.string_177);
-                        PixivOperate.postFollowUser(data.getUser().getId(), Params.TYPE_PUBLUC);
+                        PixivOperate.postFollowUser(data.getUser().getId(), Params.TYPE_PUBLIC);
                         data.getUser().setIs_followed(true);
                     }
                 }
             });
             baseBind.starUser.setOnLongClickListener(v1 -> {
-                if (!data.getUser().isIs_followed()) {
-                    baseBind.starUser.setText(R.string.string_177);
+                Integer integerValue = Shaft.appViewModel.getFollowUserLiveData(userID).getValue();
+                if (!AppLevelViewModel.FollowUserStatus.isFollowed(integerValue)) {
                     data.getUser().setIs_followed(true);
-                    PixivOperate.postFollowUser(data.getUser().getId(), Params.TYPE_PRIVATE);
-                    return true;
-                } else {
-                    return false;
                 }
+                PixivOperate.postFollowUser(data.getUser().getId(), Params.TYPE_PRIVATE);
+                return true;
             });
         }
 
@@ -164,6 +183,20 @@ public class UActivity extends BaseActivity<ActivityNewUserBinding> implements D
         }
         Glide.with(mContext).load(GlideUtil.getHead(data.getUser())).into(baseBind.userHead);
         baseBind.userName.setText(data.getUser().getName());
+        baseBind.userName.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Common.copy(mContext, String.valueOf(data.getUser().getId()));
+            }
+        });
+        baseBind.userName.setOnLongClickListener(new View.OnLongClickListener(){
+            @Override
+            public boolean onLongClick(View v) {
+                Common.copy(mContext, data.getUser().getName());
+                return true;
+            }
+        });
+
         baseBind.follow.setText(String.valueOf(data.getProfile().getTotal_follow_users()));
         baseBind.pFriend.setText(String.valueOf(data.getProfile().getTotal_mypixiv_users()));
 
@@ -190,6 +223,19 @@ public class UActivity extends BaseActivity<ActivityNewUserBinding> implements D
         };
         baseBind.follow.setOnClickListener(follow);
         baseBind.followS.setOnClickListener(follow);
+    }
 
+    private void updateFollowUserUI(int status){
+        if(AppLevelViewModel.FollowUserStatus.isFollowed(status)){
+            baseBind.starUser.setText(R.string.string_177);
+            if(AppLevelViewModel.FollowUserStatus.isPrivateFollowed(status)){
+                baseBind.starUser.setBackgroundResource(R.drawable.follow_button_stroke_new_dotted);
+            }else{
+                baseBind.starUser.setBackgroundResource(R.drawable.follow_button_stroke_new);
+            }
+        }else{
+            baseBind.starUser.setText(R.string.string_178);
+            baseBind.starUser.setBackgroundResource(R.drawable.follow_button_stroke_new);
+        }
     }
 }

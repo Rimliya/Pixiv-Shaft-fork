@@ -1,58 +1,57 @@
 package ceui.lisa.adapters;
 
-import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.RequestBuilder;
+import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.load.resource.bitmap.BitmapTransitionOptions;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
-import com.github.ybq.android.spinkit.style.Wave;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import ceui.lisa.R;
-import ceui.lisa.activities.ImageDetailActivity;
+import ceui.lisa.activities.BaseActivity;
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.databinding.RecyIllustDetailBinding;
+import ceui.lisa.download.IllustDownload;
 import ceui.lisa.models.IllustsBean;
+import ceui.lisa.transformer.LargeBitmapScaleTransformer;
 import ceui.lisa.transformer.UniformScaleTransformation;
 import ceui.lisa.utils.Common;
-import ceui.lisa.utils.GlideUtil;
+import ceui.lisa.utils.GlideUrlChild;
+import ceui.lisa.utils.Params;
+import ceui.lisa.utils.PixivOperate;
+import me.jessyan.progressmanager.ProgressListener;
+import me.jessyan.progressmanager.ProgressManager;
+import me.jessyan.progressmanager.body.ProgressInfo;
 
-public class IllustAdapter extends RecyclerView.Adapter<ViewHolder<RecyIllustDetailBinding>> {
+public class IllustAdapter extends AbstractIllustAdapter<ViewHolder<RecyIllustDetailBinding>> {
 
-    private Context mContext;
-    private IllustsBean allIllust;
-    private int imageSize;
-    private Map<Integer, Boolean> hasLoad = new HashMap<>();
-    private int maxHeight;
+    private final int maxHeight;
+    private final FragmentActivity mActivity;
+    private final Fragment mFragment;
+    private static final boolean longPressDownload = Shaft.sSettings.isIllustLongPressDownload();
 
-    public IllustAdapter(Context context, IllustsBean illustsBean, int maxHeight){
-        Common.showLog("IllustAdapter maxHeight " + maxHeight );
-        mContext = context;
+    public IllustAdapter(FragmentActivity activity, Fragment fragment, IllustsBean illustsBean, int maxHeight, boolean isForceOriginal) {
+        Common.showLog("IllustAdapter maxHeight " + maxHeight);
+        mActivity = activity;
+        mContext = fragment.requireContext();
         allIllust = illustsBean;
         this.maxHeight = maxHeight;
         imageSize = mContext.getResources().getDisplayMetrics().widthPixels;
-        hasLoad.clear();
-        for (int i = 0; i < allIllust.getPage_count(); i++) {
-            hasLoad.put(i, false);
-        }
+        this.isForceOriginal = isForceOriginal;
+        this.mFragment = fragment;
     }
 
     @NonNull
@@ -65,11 +64,19 @@ public class IllustAdapter extends RecyclerView.Adapter<ViewHolder<RecyIllustDet
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder<RecyIllustDetailBinding> holder, int position) {
-        Wave wave = new Wave();
-        holder.baseBind.progress.setIndeterminateDrawable(wave);
+        super.onBindViewHolder(holder, position);
+        if(longPressDownload && mActivity instanceof BaseActivity<?>){
+            holder.itemView.setOnLongClickListener(v -> {
+                IllustDownload.downloadIllustCertainPage(allIllust, position, (BaseActivity<?>) mActivity);
+                if(Shaft.sSettings.isAutoPostLikeWhenDownload() && !allIllust.isIs_bookmarked()){
+                    PixivOperate.postLikeDefaultStarType(allIllust);
+                }
+                return true;
+            });
+        }
+
         if (position == 0) {
             if (allIllust.getPage_count() == 1) {
-
                 //获取屏幕imageview的宽高比率
                 float screenRatio = (float) imageSize / maxHeight;
                 //获取作品的宽高比率
@@ -81,6 +88,7 @@ public class IllustAdapter extends RecyclerView.Adapter<ViewHolder<RecyIllustDet
                     ViewGroup.LayoutParams params = holder.baseBind.illust.getLayoutParams();
                     params.width = imageSize;
                     params.height = maxHeight;
+                    Common.showLog("onBindViewHolder " + maxHeight);
                     holder.baseBind.illust.setLayoutParams(params);
                     loadIllust(holder, position, false);
                 } else {
@@ -98,8 +106,6 @@ public class IllustAdapter extends RecyclerView.Adapter<ViewHolder<RecyIllustDet
                         loadIllust(holder, position, false);
                     }
                 }
-
-
             } else {
                 holder.baseBind.illust.setScaleType(ImageView.ScaleType.CENTER_CROP);
                 loadIllust(holder, position, true);
@@ -108,85 +114,69 @@ public class IllustAdapter extends RecyclerView.Adapter<ViewHolder<RecyIllustDet
             holder.baseBind.illust.setScaleType(ImageView.ScaleType.CENTER_CROP);
             loadIllust(holder, position, true);
         }
-
-        if (hasLoad.get(position)) {
-            Common.showLog("hasLoad 隐藏掉 " + position);
-            holder.baseBind.progress.setVisibility(View.INVISIBLE);
-        } else {
-            Common.showLog("hasLoad 显示掉 " + position);
-            holder.baseBind.progress.setVisibility(View.VISIBLE);
-        }
-
-        holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(mContext, ImageDetailActivity.class);
-            intent.putExtra("illust", allIllust);
-            intent.putExtra("dataType", "二级详情");
-            intent.putExtra("index", position);
-            mContext.startActivity(intent);
-        });
     }
 
     /**
-     *
      * @param holder
      * @param position
      * @param changeSize 是否自动计算宽高
      */
-    private void loadIllust(ViewHolder<RecyIllustDetailBinding> holder, int position, boolean changeSize){
-        holder.baseBind.progress.setVisibility(View.VISIBLE);
-        Glide.with(mContext)
+    private void loadIllust(ViewHolder<RecyIllustDetailBinding> holder, int position, boolean changeSize) {
+        holder.baseBind.reload.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                holder.baseBind.reload.setVisibility(View.GONE);
+                holder.baseBind.progressLayout.donutProgress.setVisibility(View.VISIBLE);
+                loadIllust(holder, position, changeSize);
+            }
+        });
+        final String imageUrl;
+        boolean isLoadOriginalImage = Shaft.sSettings.isShowOriginalPreviewImage() || isForceOriginal;
+        if (isLoadOriginalImage) {
+            imageUrl = IllustDownload.getUrl(allIllust, position, Params.IMAGE_RESOLUTION_ORIGINAL);
+        } else {
+            imageUrl = IllustDownload.getUrl(allIllust, position, Params.IMAGE_RESOLUTION_LARGE);
+        }
+        ProgressManager.getInstance().addResponseListener(imageUrl, new ProgressListener() {
+            @Override
+            public void onProgress(ProgressInfo progressInfo) {
+                holder.baseBind.progressLayout.donutProgress.setProgress(progressInfo.getPercent());
+                if(progressInfo.isFinish()){
+                    ProgressManager.getInstance().removeResponseListener(imageUrl,this);
+                }
+            }
+
+            @Override
+            public void onError(long id, Exception e) {
+
+            }
+        });
+
+        RequestManager requestManager = this.mFragment != null ? Glide.with(this.mFragment) : Glide.with(mContext);
+
+        requestManager
                 .asBitmap()
-                .load(Shaft.sSettings.isFirstImageSize() ?
-                        GlideUtil.getOriginal(allIllust, position) :
-                        GlideUtil.getLargeImage(allIllust, position))
+                .load(new GlideUrlChild(imageUrl))
+                .transform(new LargeBitmapScaleTransformer())
                 .transition(BitmapTransitionOptions.withCrossFade())
-                .error(getBuilder(holder.baseBind.progress, position))
                 .listener(new RequestListener<Bitmap>() {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Bitmap> target, boolean isFirstResource) {
-                        hasLoad.put(position, false);
-                        Common.showLog("IllustAdapter onLoadFailed " + position);
+                        holder.baseBind.reload.setVisibility(View.VISIBLE);
+                        holder.baseBind.progressLayout.donutProgress.setVisibility(View.INVISIBLE);
                         return false;
                     }
 
                     @Override
                     public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target, DataSource dataSource, boolean isFirstResource) {
-                        holder.baseBind.progress.setVisibility(View.INVISIBLE);
-                        Common.showLog("IllustAdapter onResourceReady " + position);
-                        hasLoad.put(position, true);
+                        holder.baseBind.reload.setVisibility(View.GONE);
+                        holder.baseBind.progressLayout.donutProgress.setVisibility(View.INVISIBLE);
+                        if (isLoadOriginalImage) {
+                            Shaft.getMMKV().encode(imageUrl, true);
+                        }
                         return false;
                     }
                 })
                 .into(new UniformScaleTransformation(holder.baseBind.illust, changeSize));
-    }
-
-    @Override
-    public int getItemCount() {
-        return allIllust.getPage_count();
-    }
-
-    public RequestBuilder<Bitmap> getBuilder(ProgressBar progressBar, int position) {
-        return Glide.with(mContext)
-                .asBitmap()
-                .load(Shaft.sSettings.isFirstImageSize() ?
-                        GlideUtil.getOriginal(allIllust, position) :
-                        GlideUtil.getLargeImage(allIllust, position))
-                .transition(BitmapTransitionOptions.withCrossFade())
-                .listener(new RequestListener<Bitmap>() {
-                    @Override
-                    public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Bitmap> target, boolean isFirstResource) {
-                        hasLoad.put(position, false);
-                        Common.showLog("IllustAdapter onLoadFailed " + position);
-                        return false;
-                    }
-
-                    @Override
-                    public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target, DataSource dataSource, boolean isFirstResource) {
-                        progressBar.setVisibility(View.INVISIBLE);
-                        Common.showLog("IllustAdapter onResourceReady " + position);
-                        hasLoad.put(position, true);
-                        return false;
-                    }
-                });
     }
 }

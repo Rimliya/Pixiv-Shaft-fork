@@ -1,5 +1,6 @@
 package ceui.lisa.adapters;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.view.LayoutInflater;
@@ -12,6 +13,7 @@ import com.bumptech.glide.Glide;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 import ceui.lisa.R;
 import ceui.lisa.activities.Shaft;
@@ -28,7 +30,9 @@ import ceui.lisa.utils.Params;
 public class HistoryAdapter extends BaseAdapter<IllustHistoryEntity, RecyViewHistoryBinding> {
 
     private int illustImageSize = 0, novelImageSize = 0;
-    private SimpleDateFormat mTime = new SimpleDateFormat("MM月dd日 HH: mm");
+    private final SimpleDateFormat mTime = new SimpleDateFormat(
+            mContext.getResources().getString(R.string.string_350),
+            Locale.getDefault());
 
     public HistoryAdapter(List<IllustHistoryEntity> targetList, Context context) {
         super(targetList, context);
@@ -42,6 +46,7 @@ public class HistoryAdapter extends BaseAdapter<IllustHistoryEntity, RecyViewHis
         mLayoutID = R.layout.recy_view_history;
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     public void bindData(IllustHistoryEntity target, ViewHolder<RecyViewHistoryBinding> bindView, int position) {
         if (target.getType() == 0) {
@@ -50,14 +55,13 @@ public class HistoryAdapter extends BaseAdapter<IllustHistoryEntity, RecyViewHis
             params.width = illustImageSize;
             bindView.baseBind.illustImage.setLayoutParams(params);
 
-            IllustsBean current = Shaft.sGson.fromJson(allIllust.get(position).getIllustJson(), IllustsBean.class);
+            IllustsBean current = Shaft.sGson.fromJson(allItems.get(position).getIllustJson(), IllustsBean.class);
             Glide.with(mContext)
                     .load(GlideUtil.getMediumImg(current))
                     .placeholder(R.color.light_bg)
                     .into(bindView.baseBind.illustImage);
             bindView.baseBind.title.setText(current.getTitle());
-            bindView.baseBind.author.setText("by: " + current.getUser().getName());
-            bindView.baseBind.time.setText(mTime.format(allIllust.get(position).getTime()));
+            bindView.baseBind.author.setText(String.format("by: %s", current.getUser().getName()));
 
             if (current.isGif()) {
                 bindView.baseBind.pSize.setVisibility(View.VISIBLE);
@@ -67,7 +71,7 @@ public class HistoryAdapter extends BaseAdapter<IllustHistoryEntity, RecyViewHis
                     bindView.baseBind.pSize.setVisibility(View.GONE);
                 } else {
                     bindView.baseBind.pSize.setVisibility(View.VISIBLE);
-                    bindView.baseBind.pSize.setText(current.getPage_count() + "P");
+                    bindView.baseBind.pSize.setText(String.format(Locale.getDefault(), "%dP", current.getPage_count()));
                 }
             }
 
@@ -84,14 +88,13 @@ public class HistoryAdapter extends BaseAdapter<IllustHistoryEntity, RecyViewHis
             params.width = novelImageSize;
             bindView.baseBind.illustImage.setLayoutParams(params);
 
-            NovelBean current = Shaft.sGson.fromJson(allIllust.get(position).getIllustJson(), NovelBean.class);
+            NovelBean current = Shaft.sGson.fromJson(allItems.get(position).getIllustJson(), NovelBean.class);
             Glide.with(mContext)
-                    .load(GlideUtil.getMediumImg(current.getImage_urls().getMedium()))
+                    .load(GlideUtil.getUrl(current.getImage_urls().getMedium()))
                     .placeholder(R.color.light_bg)
                     .into(bindView.baseBind.illustImage);
             bindView.baseBind.title.setText(current.getTitle());
-            bindView.baseBind.author.setText("by: " + current.getUser().getName());
-            bindView.baseBind.time.setText(mTime.format(allIllust.get(position).getTime()));
+            bindView.baseBind.author.setText(String.format("by: %s", current.getUser().getName()));
 
             bindView.baseBind.pSize.setVisibility(View.VISIBLE);
             bindView.baseBind.pSize.setText("小说");
@@ -104,12 +107,20 @@ public class HistoryAdapter extends BaseAdapter<IllustHistoryEntity, RecyViewHis
                     intent.putExtra("hideStatusBar", true);
                     mContext.startActivity(intent);
                 });
+                bindView.baseBind.author.setOnClickListener(v -> {
+                    bindView.baseBind.author.setTag(current.getUser().getId());
+                    mOnItemClickListener.onItemClick(bindView.baseBind.author, position, 1);
+                });
             }
         }
 
-
-
-
+        bindView.baseBind.time.setText(mTime.format(allItems.get(position).getTime()));
+        bindView.baseBind.deleteItem.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mOnItemClickListener.onItemClick(v, position, 2);
+            }
+        });
         //从-400 丝滑滑动到0
         ((SpringHolder) bindView).spring.setCurrentValue(-400);
         ((SpringHolder) bindView).spring.setEndValue(0);

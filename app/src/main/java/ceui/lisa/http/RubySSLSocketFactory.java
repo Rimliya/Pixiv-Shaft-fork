@@ -22,9 +22,8 @@ import kotlin.TypeCastException;
 import kotlin.jvm.internal.Intrinsics;
 
 public final class RubySSLSocketFactory extends SSLSocketFactory {
-    private HttpsURLConnection conn;
 
-    private HostnameVerifier hostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
+    private final HostnameVerifier hostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
 
     @Nullable
     public Socket createSocket(@Nullable String paramString, int paramInt) {
@@ -48,11 +47,13 @@ public final class RubySSLSocketFactory extends SSLSocketFactory {
 
     @NotNull
     public Socket createSocket(@Nullable Socket paramSocket, @Nullable String paramString, int paramInt, boolean paramBoolean) throws IOException {
-        if (paramSocket == null)
+        if (paramSocket == null) {
             Intrinsics.throwNpe();
+        }
         InetAddress inetAddress = paramSocket.getInetAddress();
         Intrinsics.checkExpressionValueIsNotNull(inetAddress, "address");
-        Log.d("address", inetAddress.getHostAddress());
+        Log.d("createSocket address1", inetAddress.getHostAddress());
+        // okhttp3 4.5.0 版本引入修改，okhttp3.internal.connection.RealConnection->isHealthy中，检查了rawSocket.isClosed状态，如果需要更新到高版本依然可用，注释下方2行
         if (paramBoolean)
             paramSocket.close();
         SocketFactory socketFactory = SSLCertificateSocketFactory.getDefault(0);
@@ -81,14 +82,6 @@ public final class RubySSLSocketFactory extends SSLSocketFactory {
     @NotNull
     public String[] getDefaultCipherSuites() {
         return new String[0];
-    }
-
-    public final HostnameVerifier getHostnameVerifier() {
-        return this.hostnameVerifier;
-    }
-
-    public final void setHostnameVerifier(HostnameVerifier paramHostnameVerifier) {
-        this.hostnameVerifier = paramHostnameVerifier;
     }
 
     @NotNull

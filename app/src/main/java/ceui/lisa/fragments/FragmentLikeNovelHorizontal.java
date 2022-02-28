@@ -34,7 +34,7 @@ import static ceui.lisa.activities.Shaft.sUserModel;
 
 public class FragmentLikeNovelHorizontal extends BaseFragment<FragmentLikeIllustHorizontalBinding> {
 
-    private List<NovelBean> allItems = new ArrayList<>();
+    private final List<NovelBean> allItems = new ArrayList<>();
     private NHAdapter mAdapter;
     private int type; // 0某人收藏的小说，1某人创作的小说
     private int userID;
@@ -123,10 +123,10 @@ public class FragmentLikeNovelHorizontal extends BaseFragment<FragmentLikeIllust
     protected void initData() {
         Observable<ListNovel> mApi;
         if (type == 0) {
-            mApi = Retro.getAppApi().getUserLikeNovel(sUserModel.getResponse().getAccess_token(),
-                    userID, Params.TYPE_PUBLUC);
+            mApi = Retro.getAppApi().getUserLikeNovel(sUserModel.getAccess_token(),
+                    userID, Params.TYPE_PUBLIC);
         } else {
-            mApi = Retro.getAppApi().getUserSubmitNovel(sUserModel.getResponse().getAccess_token(),
+            mApi = Retro.getAppApi().getUserSubmitNovel(sUserModel.getAccess_token(),
                     userID);
         }
         mApi.subscribeOn(Schedulers.newThread())

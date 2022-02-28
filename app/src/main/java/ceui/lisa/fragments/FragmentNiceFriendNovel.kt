@@ -3,18 +3,14 @@ package ceui.lisa.fragments
 import androidx.databinding.ViewDataBinding
 import ceui.lisa.R
 import ceui.lisa.adapters.BaseAdapter
-import ceui.lisa.adapters.IAdapter
 import ceui.lisa.adapters.NAdapter
 import ceui.lisa.core.BaseRepo
 import ceui.lisa.databinding.FragmentBaseListBinding
-import ceui.lisa.model.ListIllust
 import ceui.lisa.model.ListNovel
-import ceui.lisa.models.IllustsBean
 import ceui.lisa.models.NovelBean
-import ceui.lisa.repo.NiceFriendIllustRepo
 import ceui.lisa.repo.NiceFriendNovelRepo
 
-class FragmentNiceFriendNovel: NetListFragment<FragmentBaseListBinding, ListNovel, NovelBean>() {
+class FragmentNiceFriendNovel : NetListFragment<FragmentBaseListBinding, ListNovel, NovelBean>() {
 
     override fun adapter(): BaseAdapter<*, out ViewDataBinding> {
         return NAdapter(allItems, mContext)

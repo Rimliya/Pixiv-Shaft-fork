@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import ceui.lisa.interfaces.OnItemClickListener;
+import ceui.lisa.interfaces.OnItemLongClickListener;
 import ceui.lisa.models.Starable;
 import ceui.lisa.utils.Common;
 
@@ -21,24 +22,30 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
 
     public static final int ITEM_HEAD = 1023;
     public static final int ITEM_NORMAL = 1024;
-    protected List<Item> allIllust;
+    protected List<Item> allItems;
     protected Context mContext;
     protected int mLayoutID = -1;
     protected OnItemClickListener mOnItemClickListener;
+    protected OnItemLongClickListener mOnItemLongClickListener;
+    protected String nextUrl, uuid;
+    public Runnable onPreload = null;
+    public int preloadItemCount = 5;
+    private int scrollState = RecyclerView.SCROLL_STATE_IDLE;
 
     public BaseAdapter(@Nullable List<Item> targetList, Context context) {
         Common.showLog(getClass().getSimpleName() + " newInstance");
-        this.allIllust = targetList;
+        this.allItems = targetList;
         this.mContext = context;
         initLayout();
     }
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        checkPreload(position);
         int viewType = getItemViewType(position);
         if (viewType == ITEM_NORMAL) {
             int index = position - headerSize();
-            tryCatchBindData(allIllust.get(index), (ViewHolder<BindView>) holder, index);
+            tryCatchBindData(allItems.get(index), (ViewHolder<BindView>) holder, index);
         } else if (viewType == ITEM_HEAD) {
 
         }
@@ -46,7 +53,7 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
 
     @Override
     public int getItemCount() {
-        return allIllust.size() + headerSize();
+        return allItems.size() + headerSize();
     }
 
     public abstract void initLayout();
@@ -76,9 +83,14 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
         return this;
     }
 
+    public BaseAdapter<Item, BindView> setOnItemLongClickListener(OnItemLongClickListener onItemLongClickListener) {
+        mOnItemLongClickListener = onItemLongClickListener;
+        return this;
+    }
+
     public void clear() {
-        final int size = allIllust.size();
-        allIllust.clear();
+        final int size = allItems.size();
+        allItems.clear();
         notifyItemRangeRemoved(0, size);
     }
 
@@ -110,8 +122,8 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
     }
 
     public Item getItemAt(int index) {
-        if (index < allIllust.size()) {
-            return allIllust.get(index);
+        if (index < allItems.size()) {
+            return allItems.get(index);
         }
         return null;
     }
@@ -121,23 +133,55 @@ public abstract class BaseAdapter<Item, BindView extends ViewDataBinding> extend
             return;
         }
 
-        if (allIllust == null || allIllust.size() == 0) {
+        if (allItems == null || allItems.size() == 0) {
             return;
         }
 
-        for (int i = 0; i < allIllust.size(); i++) {
-            if (allIllust.get(i) instanceof Starable) {
-                if (((Starable) allIllust.get(i)).getItemID() == id) {
+        for (int i = 0; i < allItems.size(); i++) {
+            if (allItems.get(i) instanceof Starable) {
+                if (((Starable) allItems.get(i)).getItemID() == id) {
                     //设置这个作品为已收藏状态
-                    ((Starable) allIllust.get(i)).setItemStared(isLike);
+                    ((Starable) allItems.get(i)).setItemStared(isLike);
                     if (headerSize() != 0) {//如果有header
                         notifyItemChanged(i + headerSize());
                     } else { //没有header
                         notifyItemChanged(i);
                     }
-                    break;
+                    // break; // 可能出现重复数据，导致多个相同 Item 状态不一致
                 }
             }
+        }
+    }
+
+    public void setNextUrl(String nextUrl) {
+        this.nextUrl = nextUrl;
+    }
+
+    /**
+     * 赋值uuid
+     *
+     * @param uuid 宿主fragment 的 uuid
+     */
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                scrollState = newState;
+                super.onScrollStateChanged(recyclerView, newState);
+            }
+        });
+    }
+
+    private void checkPreload(int position){
+        if (onPreload != null && position == Math.max(getItemCount() - 1 - preloadItemCount, 0)
+                && scrollState != RecyclerView.SCROLL_STATE_IDLE) {
+            onPreload.run();
         }
     }
 }

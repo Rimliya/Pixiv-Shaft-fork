@@ -7,15 +7,17 @@ import android.view.View
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProvider
 import ceui.lisa.R
+import ceui.lisa.activities.Shaft
 import ceui.lisa.activities.TemplateActivity
+import ceui.lisa.database.AppDatabase
 import ceui.lisa.databinding.FragmentUserRightBinding
 import ceui.lisa.databinding.TagItemBinding
 import ceui.lisa.utils.Params
+import ceui.lisa.utils.PixivOperate
 import ceui.lisa.viewmodel.UserViewModel
 import com.scwang.smartrefresh.layout.SmartRefreshLayout
 import com.zhy.view.flowlayout.FlowLayout
 import com.zhy.view.flowlayout.TagAdapter
-import java.util.*
 
 class FragmentUserRight : SwipeFragment<FragmentUserRightBinding>() {
 
@@ -55,15 +57,27 @@ class FragmentUserRight : SwipeFragment<FragmentUserRightBinding>() {
             content.add("插画/漫画收藏：" + data.profile.total_illust_bookmarks_public)
         }
         content.add("小说收藏")
+        content.add("相关用户")
         baseBind.tagLayout.adapter = object : TagAdapter<String>(content) {
             override fun getView(parent: FlowLayout, position: Int, s: String?): View {
                 val binding: TagItemBinding = DataBindingUtil.inflate(
-                        LayoutInflater.from(mContext), R.layout.tag_item, null, false)
+                    LayoutInflater.from(mContext), R.layout.tag_item, null, false
+                )
                 binding.tagName.text = s
                 return binding.root
             }
         }
-        baseBind.tagLayout.setOnTagClickListener { view, position, parent ->
+        val entity = AppDatabase.getAppDatabase(Shaft.getContext()).searchDao().getMuteEntityByID(data.userId)
+        baseBind.banUser.isChecked = entity != null
+        baseBind.banUser.setOnCheckedChangeListener { buttonView, isChecked ->
+            if (isChecked) {
+                PixivOperate.muteUser(data.user)
+            } else {
+                PixivOperate.unMuteUser(data.user)
+            }
+        }
+        baseBind.banUserRela.setOnClickListener { baseBind.banUser.performClick() }
+        baseBind.tagLayout.setOnTagClickListener { _, position, _ ->
             val intent = Intent(mContext, TemplateActivity::class.java)
             intent.putExtra(Params.USER_ID, data.user.userId)
             when {
@@ -88,6 +102,9 @@ class FragmentUserRight : SwipeFragment<FragmentUserRightBinding>() {
                 content[position].contains("小说收藏") -> {
                     intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "小说收藏")
                 }
+                content[position].contains("相关用户") -> {
+                    intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "相关用户")
+                }
             }
             startActivity(intent)
             true
@@ -108,7 +125,7 @@ class FragmentUserRight : SwipeFragment<FragmentUserRightBinding>() {
         if (!TextUtils.isEmpty(data.profile.webpage)) {
             baseBind.realHome.text = data.profile.webpage
         } else {
-            baseBind.realHome.text = "https://www.pixiv.net/users/" + data.user.id
+            baseBind.realHome.text = "https://www.pixiv.net/users/%d".format(data.user.id)
         }
         if (!TextUtils.isEmpty(data.profile.twitter_url)) {
             baseBind.realTwitter.text = data.profile.twitter_url

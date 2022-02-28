@@ -40,7 +40,7 @@ import static ceui.lisa.fragments.ListFragment.animateDuration;
 
 public class FragmentLikeIllustHorizontal extends BaseFragment<FragmentLikeIllustHorizontalBinding> {
 
-    private List<IllustsBean> allItems = new ArrayList<>();
+    private final List<IllustsBean> allItems = new ArrayList<>();
     private UserDetailResponse mUserDetailResponse;
     private LAdapter mAdapter;
     private int type; // 1插画收藏    2插画作品     3漫画作品
@@ -69,7 +69,7 @@ public class FragmentLikeIllustHorizontal extends BaseFragment<FragmentLikeIllus
     @Override
     public void initView() {
         Wave wave = new Wave();
-        wave.setColor(android.R.attr.colorPrimary);
+        wave.setColor(R.attr.colorPrimary);
         baseBind.progress.setIndeterminateDrawable(wave);
         baseBind.recyclerView.addItemDecoration(new
                 LinearItemHorizontalDecoration(DensityUtil.dp2px(8.0f)));
@@ -133,13 +133,13 @@ public class FragmentLikeIllustHorizontal extends BaseFragment<FragmentLikeIllus
     protected void initData() {
         Observable<ListIllust> api = null;
         if (type == 1) {
-            api = Retro.getAppApi().getUserLikeIllust(sUserModel.getResponse().getAccess_token(),
-                    mUserDetailResponse.getUser().getId(), Params.TYPE_PUBLUC);
+            api = Retro.getAppApi().getUserLikeIllust(sUserModel.getAccess_token(),
+                    mUserDetailResponse.getUser().getId(), Params.TYPE_PUBLIC);
         } else if (type == 2) {
-            api = Retro.getAppApi().getUserSubmitIllust(sUserModel.getResponse().getAccess_token(),
+            api = Retro.getAppApi().getUserSubmitIllust(sUserModel.getAccess_token(),
                     mUserDetailResponse.getUser().getId(), Params.TYPE_ILLUST);
         } else if (type == 3) {
-            api = Retro.getAppApi().getUserSubmitIllust(sUserModel.getResponse().getAccess_token(),
+            api = Retro.getAppApi().getUserSubmitIllust(sUserModel.getAccess_token(),
                     mUserDetailResponse.getUser().getId(), Params.TYPE_MANGA);
         }
 

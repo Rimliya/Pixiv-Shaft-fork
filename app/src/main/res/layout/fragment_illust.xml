@@ -22,14 +22,39 @@
                 android:id="@+id/refreshLayout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="#000">
+                android:background="@color/black">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recyclerView"
+                <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
-                </androidx.recyclerview.widget.RecyclerView>
+                    <RelativeLayout
+                        android:id="@+id/holder"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_above="@+id/helper_view"
+                        android:clipChildren="false">
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true">
+
+                        </androidx.recyclerview.widget.RecyclerView>
+
+
+                    </RelativeLayout>
+
+                    <View
+                        android:id="@+id/helper_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_alignParentBottom="true">
+
+                    </View>
+
+                </RelativeLayout>
 
             </com.scwang.smartrefresh.layout.SmartRefreshLayout>
 
@@ -38,14 +63,16 @@
                 android:id="@+id/core_linear"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="vertical"
                 android:elevation="@dimen/six_dp"
+                android:orientation="vertical"
                 app:behavior_peekHeight="180dp"
                 app:layout_behavior="@string/bottom_sheet_behavior"
                 app:qmui_backgroundColor="@color/fragment_center"
                 app:qmui_borderWidth="0dp"
                 app:qmui_radiusTopLeft="20dp"
-                app:qmui_radiusTopRight="20dp">
+                app:qmui_radiusTopRight="20dp"
+                android:clickable="true"
+                android:focusable="true">
 
                 <LinearLayout
                     android:id="@+id/bottom_bar"
@@ -62,7 +89,7 @@
                             android:layout_width="100dp"
                             android:layout_height="3dp"
                             android:layout_centerHorizontal="true"
-                            android:layout_marginTop="12dp"
+                            android:layout_marginTop="@dimen/four_dp"
                             android:layout_marginBottom="@dimen/eight_dp"
                             android:background="@drawable/illust_slider_bg">
 
@@ -72,26 +99,32 @@
 
                     <TextView
                         android:id="@+id/title"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/tweenty_four_dp"
-                        android:layout_marginEnd="48dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/twenty_four_dp"
+                        android:layout_marginStart="@dimen/twenty_four_dp"
+                        android:layout_marginEnd="56dp"
+                        android:gravity="start|bottom"
                         android:ellipsize="end"
-                        android:maxLines="2"
+                        android:maxLines="1"
                         android:text="@string/string_66"
-                        android:textColor="#121212"
+                        android:textColor="@color/rank_text_color"
+                        android:includeFontPadding="false"
                         android:textSize="20sp"
+                        app:autoSizeMaxTextSize="20sp"
+                        app:autoSizeMinTextSize="6sp"
+                        app:autoSizeTextType="uniform"
                         android:textStyle="bold">
 
                     </TextView>
 
                     <com.qmuiteam.qmui.widget.roundwidget.QMUIRoundRelativeLayout
+                        android:id="@+id/rela_illust_brief"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/tweenty_four_dp"
+                        android:layout_marginStart="@dimen/twenty_four_dp"
                         android:layout_marginTop="@dimen/four_dp"
-                        android:layout_marginEnd="@dimen/tweenty_four_dp"
-                        android:layout_marginBottom="@dimen/eight_dp"
+                        android:layout_marginEnd="@dimen/twenty_four_dp"
+                        android:layout_marginBottom="@dimen/six_dp"
                         android:orientation="vertical"
                         app:qmui_backgroundColor="?attr/colorPrimaryDark"
                         app:qmui_borderWidth="0dp"
@@ -101,10 +134,10 @@
                             android:id="@+id/user_head"
                             android:layout_width="50dp"
                             android:layout_height="50dp"
-                            android:layout_marginStart="@dimen/twelve_dp"
-                            android:layout_marginTop="@dimen/twelve_dp"
+                            android:layout_marginStart="@dimen/eight_dp"
+                            android:layout_marginTop="@dimen/eight_dp"
                             android:layout_marginEnd="@dimen/eight_dp"
-                            android:layout_marginBottom="@dimen/twelve_dp"
+                            android:layout_marginBottom="@dimen/eight_dp"
                             android:scaleType="centerCrop"
                             app:civ_border_color="?attr/colorPrimary"
                             app:civ_border_width="1dp">
@@ -118,8 +151,10 @@
                             android:layout_height="wrap_content"
                             android:layout_alignTop="@+id/user_head"
                             android:layout_marginTop="@dimen/four_dp"
+                            android:layout_toStartOf="@+id/follow"
                             android:layout_toEndOf="@+id/user_head"
                             android:ellipsize="end"
+                            android:includeFontPadding="false"
                             android:maxLines="1"
                             android:text="@string/string_67"
                             android:textColor="@color/white"
@@ -137,6 +172,7 @@
                             android:layout_toEndOf="@+id/user_head"
                             android:ellipsize="end"
                             android:maxLines="1"
+                            android:includeFontPadding="false"
                             android:text="@string/string_68"
                             android:textColor="#bdbed6"
                             android:textSize="12sp">
@@ -149,7 +185,7 @@
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true"
-                            android:layout_marginEnd="@dimen/twelve_dp"
+                            android:layout_marginEnd="@dimen/eight_dp"
                             android:paddingStart="@dimen/eight_dp"
                             android:paddingTop="@dimen/four_dp"
                             android:paddingEnd="@dimen/eight_dp"
@@ -167,11 +203,11 @@
                 </LinearLayout>
 
                 <View
+                    android:id="@+id/view_divider"
                     android:layout_width="match_parent"
                     android:layout_height="0.5dp"
-                    android:id="@+id/view_divider"
-                    android:layout_marginStart="@dimen/tweenty_four_dp"
-                    android:layout_marginEnd="@dimen/tweenty_four_dp"
+                    android:layout_marginStart="@dimen/twenty_four_dp"
+                    android:layout_marginEnd="@dimen/twenty_four_dp"
                     android:background="@color/settings_divider">
 
                 </View>
@@ -181,29 +217,30 @@
                     android:layout_height="wrap_content">
 
                     <LinearLayout
-                        android:layout_width="match_parent"
                         android:id="@+id/second_linear"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
 
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
+                            android:layout_height="wrap_content"
+                            android:baselineAligned="false"
+                            android:paddingTop="@dimen/six_dp"
+                            android:paddingBottom="@dimen/six_dp">
 
                             <RelativeLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:clickable="true"
-                                android:foreground="?attr/selectableItemBackground"
-                                android:paddingTop="@dimen/eight_dp"
-                                android:paddingBottom="@dimen/eight_dp">
+                                android:foreground="?attr/selectableItemBackground">
 
                                 <com.qmuiteam.qmui.widget.roundwidget.QMUIRoundRelativeLayout
                                     android:id="@+id/left_rela"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginStart="@dimen/tweenty_four_dp"
+                                    android:layout_marginStart="@dimen/twenty_four_dp"
                                     app:qmui_backgroundColor="#e8e8f2"
                                     app:qmui_borderWidth="0dp"
                                     app:qmui_radius="@dimen/six_dp">
@@ -214,7 +251,6 @@
                                         android:padding="@dimen/twelve_dp"
                                         android:src="@drawable/ic_remove_red_eye_black_24dp"
                                         app:tint="?attr/colorPrimary">
-
 
                                     </ImageView>
 
@@ -255,9 +291,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:clickable="true"
-                                android:foreground="?attr/selectableItemBackground"
-                                android:paddingTop="@dimen/eight_dp"
-                                android:paddingBottom="@dimen/eight_dp">
+                                android:foreground="?attr/selectableItemBackground">
 
                                 <com.qmuiteam.qmui.widget.roundwidget.QMUIRoundRelativeLayout
                                     android:id="@+id/right_rela"
@@ -325,23 +359,23 @@
                             android:id="@+id/description"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:textColorLink="?attr/colorPrimary"
-                            android:layout_marginStart="@dimen/tweenty_four_dp"
+                            android:layout_marginStart="@dimen/twenty_four_dp"
                             android:layout_marginTop="@dimen/six_dp"
-                            android:layout_marginEnd="@dimen/tweenty_four_dp"
+                            android:layout_marginEnd="@dimen/twenty_four_dp"
                             android:layout_marginBottom="@dimen/four_dp"
-                            android:textIsSelectable="true"
                             android:gravity="start"
                             android:textColor="#9b9bb1"
+                            android:textColorLink="?attr/colorPrimary"
+                            android:textIsSelectable="true"
                             android:textSize="13sp"
                             android:textStyle="bold" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/tweenty_four_dp"
+                            android:layout_marginStart="@dimen/twenty_four_dp"
                             android:layout_marginTop="@dimen/eight_dp"
-                            android:layout_marginEnd="@dimen/tweenty_four_dp"
+                            android:layout_marginEnd="@dimen/twenty_four_dp"
                             android:orientation="horizontal">
 
                             <TextView
@@ -373,9 +407,9 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/tweenty_four_dp"
+                            android:layout_marginStart="@dimen/twenty_four_dp"
                             android:layout_marginTop="@dimen/four_dp"
-                            android:layout_marginEnd="@dimen/tweenty_four_dp"
+                            android:layout_marginEnd="@dimen/twenty_four_dp"
                             android:layout_marginBottom="@dimen/eight_dp"
                             android:orientation="horizontal">
 
@@ -406,8 +440,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="@dimen/sixteen_dp"
-                app:elevation="@dimen/twelve_dp"
                 app:backgroundTint="@color/white"
+                app:elevation="@dimen/twelve_dp"
                 app:layout_anchor="@id/bottom_bar"
                 app:layout_anchorGravity="end">
 
@@ -421,69 +455,61 @@
             android:id="@+id/bottom_linear"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/fragment_center"
             android:layout_alignParentBottom="true"
+            android:background="@color/fragment_center"
             android:orientation="vertical">
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="0.5dp"
-                android:layout_marginStart="@dimen/tweenty_four_dp"
-                android:layout_marginEnd="@dimen/tweenty_four_dp"
-                android:layout_marginBottom="@dimen/eight_dp"
+                android:layout_marginStart="@dimen/twenty_four_dp"
+                android:layout_marginEnd="@dimen/twenty_four_dp"
                 android:background="@color/settings_divider">
 
             </View>
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/six_dp"
+                android:paddingBottom="@dimen/six_dp">
 
-                <ImageButton
+                <com.qmuiteam.qmui.alpha.QMUIAlphaImageButton
                     android:id="@+id/comment"
                     android:layout_width="0dp"
-                    android:layout_height="45dp"
-                    android:layout_marginStart="@dimen/tweenty_four_dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="@dimen/twenty_four_dp"
                     android:layout_marginEnd="@dimen/six_dp"
-                    android:layout_marginBottom="@dimen/eight_dp"
                     android:layout_weight="1"
                     android:background="@drawable/button_stroke_new"
                     android:src="@drawable/ic_chat_black_24dp"
-                    app:tint="?attr/colorPrimary">
+                    app:tint="?attr/colorPrimary" />
 
-                </ImageButton>
-
-                <ImageButton
+                <com.qmuiteam.qmui.alpha.QMUIAlphaImageButton
                     android:id="@+id/related"
                     android:layout_width="0dp"
-                    android:layout_height="45dp"
+                    android:layout_height="40dp"
                     android:layout_marginStart="@dimen/six_dp"
                     android:layout_marginEnd="@dimen/six_dp"
-                    android:layout_marginBottom="@dimen/eight_dp"
                     android:layout_weight="1"
                     android:background="@drawable/button_stroke_new"
                     android:src="@drawable/ic_equalizer_black_24dp"
                     android:textColor="#9f9fb4"
-                    app:tint="?attr/colorPrimary">
-
-                </ImageButton>
+                    app:tint="?attr/colorPrimary" />
 
                 <com.qmuiteam.qmui.widget.roundwidget.QMUIRoundButton
                     android:id="@+id/download"
                     android:layout_width="0dp"
-                    android:layout_height="45dp"
+                    android:layout_height="40dp"
                     android:layout_marginStart="@dimen/six_dp"
-                    android:layout_marginEnd="@dimen/tweenty_four_dp"
-                    android:layout_marginBottom="@dimen/eight_dp"
+                    android:layout_marginEnd="@dimen/twenty_four_dp"
                     android:layout_weight="2"
                     android:text="@string/string_72"
                     android:textColor="@color/white"
                     app:qmui_backgroundColor="?attr/colorPrimary"
                     app:qmui_borderColor="#eaebf9"
                     app:qmui_borderWidth="0dp"
-                    app:qmui_radius="@dimen/eight_dp">
-
-                </com.qmuiteam.qmui.widget.roundwidget.QMUIRoundButton>
+                    app:qmui_radius="@dimen/eight_dp" />
 
             </LinearLayout>
 
@@ -496,7 +522,7 @@
             android:background="@android:color/transparent"
             android:elevation="@dimen/six_dp"
             android:theme="@style/AppTheme.AppBarOverlay"
-            app:navigationIcon="@drawable/ic_baseline_arrow_back_ios_24"
+            app:navigationIcon="@drawable/ic_arrow_back_white_shadow"
             app:popupTheme="@style/AppTheme.PopupOverlay"
             app:title=" "
             app:titleTextColor="@android:color/white">

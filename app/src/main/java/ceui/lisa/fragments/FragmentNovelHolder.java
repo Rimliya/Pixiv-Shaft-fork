@@ -1,6 +1,7 @@
 package ceui.lisa.fragments;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -9,8 +10,6 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
-
-import androidx.appcompat.widget.Toolbar;
 
 import com.blankj.utilcode.util.BarUtils;
 import com.blankj.utilcode.util.PathUtils;
@@ -24,18 +23,22 @@ import com.zhy.view.flowlayout.TagFlowLayout;
 import java.util.Arrays;
 import java.util.Collections;
 
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import ceui.lisa.R;
 import ceui.lisa.activities.BaseActivity;
+import ceui.lisa.activities.NovelActivity;
 import ceui.lisa.activities.SearchActivity;
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.activities.TemplateActivity;
 import ceui.lisa.adapters.VAdapter;
+import ceui.lisa.adapters.VNewAdapter;
 import ceui.lisa.cache.Cache;
 import ceui.lisa.database.AppDatabase;
 import ceui.lisa.database.DownloadEntity;
 import ceui.lisa.databinding.FragmentNovelHolderBinding;
-import ceui.lisa.download.FileCreator;
 import ceui.lisa.download.IllustDownload;
+import ceui.lisa.helper.NovelParseHelper;
 import ceui.lisa.http.NullCtrl;
 import ceui.lisa.http.Retro;
 import ceui.lisa.interfaces.Callback;
@@ -43,6 +46,7 @@ import ceui.lisa.models.NovelBean;
 import ceui.lisa.models.NovelDetail;
 import ceui.lisa.models.TagsBean;
 import ceui.lisa.utils.Common;
+import ceui.lisa.utils.Dev;
 import ceui.lisa.utils.GlideUtil;
 import ceui.lisa.utils.Params;
 import ceui.lisa.utils.PixivOperate;
@@ -80,7 +84,7 @@ public class FragmentNovelHolder extends BaseFragment<FragmentNovelHolderBinding
     public void initView() {
         BarUtils.setNavBarColor(mActivity, getResources().getColor(R.color.hito_bg));
         if (Shaft.sSettings.getNovelHolderColor() != 0) {
-            setColor(Shaft.sSettings.getNovelHolderColor());
+            setBackgroundColor(Shaft.sSettings.getNovelHolderColor());
         }
         baseBind.fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -102,9 +106,15 @@ public class FragmentNovelHolder extends BaseFragment<FragmentNovelHolderBinding
         getNovel(mNovelBean);
     }
 
-    public void setColor(int color) {
+    public void setBackgroundColor(int color) {
         Common.showLog(className + color);
         baseBind.relaRoot.setBackgroundColor(color);
+    }
+
+    public void setTextColor(int color) {
+        Common.showLog(className + color);
+        baseBind.toolbar.getOverflowIcon().setTint(Common.getNovelTextColor());
+        setNovelAdapter();
     }
 
     private void getNovel(NovelBean novelBean) {
@@ -120,7 +130,7 @@ public class FragmentNovelHolder extends BaseFragment<FragmentNovelHolderBinding
             public void onClick(View v) {
                 Common.showLog(className + "getNovel 111");
                 PixivOperate.postLikeNovel(mNovelBean, Shaft.sUserModel,
-                        Params.TYPE_PUBLUC, baseBind.like);
+                        Params.TYPE_PUBLIC, baseBind.like);
             }
         });
 
@@ -185,6 +195,25 @@ public class FragmentNovelHolder extends BaseFragment<FragmentNovelHolderBinding
                 }
             });
         }
+        if (TextUtils.isEmpty(mNovelBean.getCaption())) {
+            baseBind.description.setVisibility(View.GONE);
+        } else {
+            baseBind.description.setVisibility(View.VISIBLE);
+            baseBind.description.setHtml(mNovelBean.getCaption());
+        }
+        baseBind.publishTime.setText(Common.getLocalYYYYMMDDHHMMString(mNovelBean.getCreate_date()));
+        baseBind.viewCount.setText(String.valueOf(mNovelBean.getTotal_view()));
+        baseBind.bookmarkCount.setText(String.valueOf(mNovelBean.getTotal_bookmarks()));
+        baseBind.comment.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(mContext, TemplateActivity.class);
+                intent.putExtra(Params.NOVEL_ID, mNovelBean.getId());
+                intent.putExtra(Params.ILLUST_TITLE, mNovelBean.getTitle());
+                intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "相关评论");
+                startActivity(intent);
+            }
+        });
         Glide.with(mContext).load(GlideUtil.getHead(mNovelBean.getUser())).into(baseBind.userHead);
 
         PixivOperate.insertNovelViewHistory(novelBean);
@@ -195,12 +224,13 @@ public class FragmentNovelHolder extends BaseFragment<FragmentNovelHolderBinding
             refreshDetail(mNovelDetail);
         } else {
             baseBind.progressRela.setVisibility(View.VISIBLE);
-            Retro.getAppApi().getNovelDetail(Shaft.sUserModel.getResponse().getAccess_token(), novelBean.getId())
+            Retro.getAppApi().getNovelDetail(Shaft.sUserModel.getAccess_token(), novelBean.getId())
                     .subscribeOn(Schedulers.newThread())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(new NullCtrl<NovelDetail>() {
                         @Override
                         public void success(NovelDetail novelDetail) {
+                            novelDetail.setParsedChapters(NovelParseHelper.tryParseChapters(novelDetail.getNovel_text()));
                             refreshDetail(novelDetail);
                         }
 
@@ -210,29 +240,39 @@ public class FragmentNovelHolder extends BaseFragment<FragmentNovelHolderBinding
                         }
                     });
         }
+
+        baseBind.toolbar.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return baseBind.awesomeCardCon.dispatchTouchEvent(event);
+            }
+        });
     }
 
     private void refreshDetail(NovelDetail novelDetail) {
+        if (Dev.isDev && false) {
+            Intent intent = new Intent(mContext, NovelActivity.class);
+            intent.putExtra(Params.NOVEL_DETAIL, novelDetail);
+            startActivity(intent);
+            finish();
+            return;
+        }
         mNovelDetail = novelDetail;
         baseBind.viewPager.setVisibility(View.VISIBLE);
-        baseBind.viewPager.setOnTouchListener(new View.OnTouchListener() {
+        baseBind.awesomeCardCon.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if (isOpen) {
                     baseBind.transformationLayout.finishTransform();
                     isOpen = false;
+                    return true;
                 }
-                return false;
+                return baseBind.viewPager.dispatchTouchEvent(event);
             }
         });
-        if (novelDetail.getNovel_text().contains("[newpage]")) {
-            String[] partList = novelDetail.getNovel_text().split("\\[newpage]");
-            baseBind.viewPager.setAdapter(new VAdapter(
-                    Arrays.asList(partList), mContext));
-        } else {
-            baseBind.viewPager.setAdapter(new VAdapter(
-                    Collections.singletonList(novelDetail.getNovel_text()), mContext));
-        }
+
+        setNovelAdapter();
+
         if (novelDetail.getSeries_prev() != null && novelDetail.getSeries_prev().getId() != 0) {
             baseBind.showPrev.setVisibility(View.VISIBLE);
             baseBind.showPrev.setOnClickListener(new View.OnClickListener() {
@@ -258,13 +298,13 @@ public class FragmentNovelHolder extends BaseFragment<FragmentNovelHolderBinding
             baseBind.showNext.setVisibility(View.INVISIBLE);
         }
         baseBind.toolbar.getMenu().clear();
-        baseBind.toolbar.inflateMenu(R.menu.change_color);
+        baseBind.toolbar.inflateMenu(R.menu.novel_read_menu);
+        baseBind.toolbar.getOverflowIcon().setTint(Common.getNovelTextColor());
         baseBind.saveNovelTxt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                IllustDownload.downloadNovel((BaseActivity<?>) mContext, FileCreator.deleteSpecialWords(
-                        mNovelBean.getTitle() + "_" + mNovelBean.getId() + "_novel_tasks.txt"
-                ), novelDetail.getNovel_text(), new Callback<Uri>() {
+                //需要下载txt文件
+                IllustDownload.downloadNovel((BaseActivity<?>) mContext, mNovelBean, novelDetail, new Callback<Uri>() {
                     @Override
                     public void doSomething(Uri t) {
                         Common.showToast(getString(R.string.string_279), 2);
@@ -275,14 +315,29 @@ public class FragmentNovelHolder extends BaseFragment<FragmentNovelHolderBinding
         baseBind.toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
-                if (item.getItemId() == R.id.action_add) {
+                if (item.getItemId() == R.id.action_change_color) {
                     if (Shaft.sSettings.getNovelHolderColor() != 0) {
                         ColorPickerDialog.newBuilder()
+                                .setDialogId(Params.DIALOG_NOVEL_BG_COLOR)
                                 .setColor(Shaft.sSettings.getNovelHolderColor())
                                 .show(mActivity);
                     } else {
                         ColorPickerDialog.newBuilder()
+                                .setDialogId(Params.DIALOG_NOVEL_BG_COLOR)
                                 .setColor(getResources().getColor(R.color.novel_holder))
+                                .show(mActivity);
+                    }
+                    return true;
+                }else if(item.getItemId() == R.id.action_change_text_color){
+                    if (Shaft.sSettings.getNovelHolderTextColor() != 0) {
+                        ColorPickerDialog.newBuilder()
+                                .setDialogId(Params.DIALOG_NOVEL_TEXT_COLOR)
+                                .setColor(Shaft.sSettings.getNovelHolderTextColor())
+                                .show(mActivity);
+                    } else {
+                        ColorPickerDialog.newBuilder()
+                                .setDialogId(Params.DIALOG_NOVEL_TEXT_COLOR)
+                                .setColor(getResources().getColor(R.color.white))
                                 .show(mActivity);
                     }
                     return true;
@@ -300,9 +355,8 @@ public class FragmentNovelHolder extends BaseFragment<FragmentNovelHolderBinding
                     baseBind.transformationLayout.finishTransform();
                     return true;
                 } else if (item.getItemId() == R.id.action_txt) {
-                    IllustDownload.downloadNovel((BaseActivity<?>) mContext, FileCreator.deleteSpecialWords(
-                            mNovelBean.getTitle() + "_" + mNovelBean.getId() + "_novel_tasks.txt"
-                    ), novelDetail.getNovel_text(), new Callback<Uri>() {
+                    //需要下载txt文件
+                    IllustDownload.downloadNovel((BaseActivity<?>) mContext, mNovelBean, novelDetail, new Callback<Uri>() {
                         @Override
                         public void doSomething(Uri t) {
                             Common.showToast(getString(R.string.string_279), 2);
@@ -310,10 +364,8 @@ public class FragmentNovelHolder extends BaseFragment<FragmentNovelHolderBinding
                     });
                     return true;
                 } else if (item.getItemId() == R.id.action_txt_and_share) {
-                    IllustDownload.downloadNovel((BaseActivity<?>) mActivity,
-                            FileCreator.deleteSpecialWords(mNovelBean.getTitle() + "_" +
-                                    mNovelBean.getId() + "_novel_tasks.txt"),
-                            novelDetail.getNovel_text(), new Callback<Uri>() {
+                    //不需要下载txt文件
+                    IllustDownload.downloadNovel((BaseActivity<?>) mActivity, mNovelBean, novelDetail, new Callback<Uri>() {
                         @Override
                         public void doSomething(Uri uri) {
                             new Share2.Builder(mActivity)
@@ -330,5 +382,49 @@ public class FragmentNovelHolder extends BaseFragment<FragmentNovelHolderBinding
                 return false;
             }
         });
+    }
+
+    private void setNovelAdapter() {
+        NovelDetail novelDetail = mNovelDetail;
+        // 如果解析成功，就使用新方式
+        if(novelDetail.getParsedChapters() != null && novelDetail.getParsedChapters().size() > 0){
+
+            baseBind.viewPager.setAdapter(new VNewAdapter(novelDetail.getParsedChapters(), mContext));
+            if(novelDetail.getNovel_marker() != null){
+                int parsedSize = novelDetail.getParsedChapters().size();
+                int pageIndex = Math.min(novelDetail.getNovel_marker().getPage(),novelDetail.getParsedChapters().get(parsedSize-1).getChapterIndex());
+                pageIndex = Math.max(pageIndex,novelDetail.getParsedChapters().get(0).getChapterIndex());
+                baseBind.viewPager.scrollToPosition(pageIndex-1);
+            }
+
+            // 设置书签
+            int markerPage = mNovelDetail.getNovel_marker().getPage();
+            if(markerPage > 0){
+                baseBind.saveNovel.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(mContext, R.color.novel_marker_add)));
+            }else{
+                baseBind.saveNovel.setImageTintList(ColorStateList.valueOf(ContextCompat.getColor(mContext, R.color.novel_marker_none)));
+            }
+
+            baseBind.saveNovel.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    View someView = baseBind.viewPager.findChildViewUnder(0,0);
+                    int currentPageIndex = baseBind.viewPager.findContainingViewHolder(someView).getAdapterPosition();
+                    int chapterIndex = mNovelDetail.getParsedChapters().get(currentPageIndex).getChapterIndex();
+                    PixivOperate.postNovelMarker(mNovelDetail.getNovel_marker(), mNovelBean.getId(), chapterIndex, baseBind.saveNovel);
+                }
+            });
+        }
+        // 旧方式
+        else {
+            if (novelDetail.getNovel_text().contains("[newpage]")) {
+                String[] partList = novelDetail.getNovel_text().split("\\[newpage]");
+                baseBind.viewPager.setAdapter(new VAdapter(
+                        Arrays.asList(partList), mContext));
+            } else {
+                baseBind.viewPager.setAdapter(new VAdapter(
+                        Collections.singletonList(novelDetail.getNovel_text()), mContext));
+            }
+        }
     }
 }

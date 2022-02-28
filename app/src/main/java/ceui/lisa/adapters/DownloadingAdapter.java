@@ -3,6 +3,7 @@ package ceui.lisa.adapters;
 import android.content.Context;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.databinding.DataBindingUtil;
@@ -51,30 +52,73 @@ public class DownloadingAdapter extends BaseAdapter<DownloadItem, RecyDownloadTa
         bindView.baseBind.progress.setTag(target.getUuid());
         if (!TextUtils.isEmpty(target.getShowUrl())) {
             Glide.with(mContext)
-                    .load(GlideUtil.getMediumImg(target.getShowUrl()))
+                    .load(GlideUtil.getUrl(target.getShowUrl()))
                     .into(bindView.baseBind.illustImage);
         }
-        if (position == 0) {
-            bindView.baseBind.progress.setProgress(Manager.get().getCurrentProgress());
-            bindView.baseBind.state.setText("正在下载");
-            Manager.get().setCallback(new Callback<Progress>() {
-                @Override
-                public void doSomething(Progress t) {
-                    if (Manager.get().getUuid().equals(bindView.baseBind.progress.getTag())) {
-                        bindView.baseBind.progress.setProgress(t.getProgress());
-                        bindView.baseBind.currentSize.setText(String.format("%s / %s",
-                                FileSizeUtil.formatFileSize(t.getCurrentSize()),
-                                FileSizeUtil.formatFileSize(t.getTotalSize())));
-                    } else {
-                        bindView.baseBind.progress.setProgress(0);
-                        bindView.baseBind.currentSize.setText(mContext.getString(R.string.string_115));
-                    }
+
+        final Manager manager = Manager.get();
+        // 回调
+        manager.setCallback(target.getUuid(), new Callback<Progress>() {
+            @Override
+            public void doSomething(Progress t) {
+                if (manager.getUuid().equals(target.getUuid())) {
+                    bindView.baseBind.progress.setProgress(t.getProgress());
+                    bindView.baseBind.currentSize.setText(String.format("%s / %s",
+                            FileSizeUtil.formatFileSize(t.getCurrentSize()),
+                            FileSizeUtil.formatFileSize(t.getTotalSize())));
+                    bindView.baseBind.state.setText("正在下载");
                 }
-            });
-        } else {
-            bindView.baseBind.progress.setProgress(0);
-            bindView.baseBind.state.setText("等待中");
-            bindView.baseBind.currentSize.setText(mContext.getString(R.string.string_115));
+            }
+        });
+
+        setDefaultView(target, bindView, position);
+
+        bindView.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (target.isPaused()) {
+                    manager.startOne(target.getUuid());
+                    bindView.baseBind.state.setText("未开始");
+                } else {
+                    manager.stopOne(target.getUuid());
+                    bindView.baseBind.state.setText("已暂停");
+                }
+            }
+        });
+
+        bindView.baseBind.deleteItem.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                manager.clearOne(target.getUuid());
+                allItems.remove(target);
+                notifyItemRemoved(position);
+                notifyItemRangeChanged(position, allItems.size() - position);
+            }
+        });
+    }
+
+    private void setDefaultView(DownloadItem target, ViewHolder<RecyDownloadTaskBinding> bindView, int position) {
+        bindView.baseBind.progress.setProgress(target.getNonius());
+        bindView.baseBind.currentSize.setText(mContext.getString(R.string.string_115));
+
+        switch (target.getState()){
+            case DownloadItem.DownloadState.INIT:
+                bindView.baseBind.state.setText("未开始");
+                break;
+            case DownloadItem.DownloadState.DOWNLOADING:
+                bindView.baseBind.state.setText("正在下载");
+                break;
+            case DownloadItem.DownloadState.PAUSED:
+                bindView.baseBind.state.setText("已暂停");
+                break;
+            case DownloadItem.DownloadState.FAILED:
+                bindView.baseBind.state.setText("已失败");
+                break;
+            case DownloadItem.DownloadState.SUCCESS:
+                bindView.baseBind.state.setText("已完成");
+                break;
+            default:
+                bindView.baseBind.state.setText("");
         }
     }
 }

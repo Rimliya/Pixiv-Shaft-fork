@@ -1,24 +1,37 @@
 package ceui.lisa.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
+import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentStatePagerAdapter;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.viewpager.widget.ViewPager;
 
 import ceui.lisa.R;
 import ceui.lisa.core.Container;
-import ceui.lisa.core.IDWithList;
-import ceui.lisa.core.TimeRecord;
+import ceui.lisa.core.Mapper;
+import ceui.lisa.core.PageData;
 import ceui.lisa.databinding.ActivityViewPagerBinding;
 import ceui.lisa.fragments.FragmentIllust;
+import ceui.lisa.fragments.FragmentImageDetail;
 import ceui.lisa.fragments.FragmentSingleIllust;
 import ceui.lisa.fragments.FragmentSingleUgora;
+import ceui.lisa.helper.DeduplicateArrayList;
+import ceui.lisa.http.NullCtrl;
+import ceui.lisa.http.Retro;
+import ceui.lisa.model.ListIllust;
 import ceui.lisa.models.IllustsBean;
 import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Params;
 import ceui.lisa.utils.PixivOperate;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class VActivity extends BaseActivity<ActivityViewPagerBinding> {
 
@@ -38,56 +51,126 @@ public class VActivity extends BaseActivity<ActivityViewPagerBinding> {
 
     @Override
     protected void initView() {
-        IDWithList<IllustsBean> idWithList = Container.get().getPage(pageUUID);
-        if (idWithList != null) {
-            final int pageSize = idWithList.getList() == null ? 0 : idWithList.getList().size();
+        PageData pageData = Container.get().getPage(pageUUID);
+        if (pageData != null) {
             baseBind.viewPager.setAdapter(new FragmentStatePagerAdapter(getSupportFragmentManager(), 0) {
                 @NonNull
                 @Override
                 public Fragment getItem(int position) {
-                    if (idWithList.getList().get(position).isGif()) {
-                        return FragmentSingleUgora.newInstance(idWithList.getList().get(position));
+                    IllustsBean illustsBean = pageData.getList().get(position);
+                    if (illustsBean.getId() == 0 || !illustsBean.isVisible()) {
+                        return FragmentImageDetail.newInstance(illustsBean.getImage_urls().getMaxImage());
+                    } else if (illustsBean.isGif()) {
+                        return FragmentSingleUgora.newInstance(illustsBean);
                     } else {
                         if (Shaft.sSettings.isUseFragmentIllust()) {
-                            return FragmentIllust.newInstance(idWithList.getList().get(position));
+                            return FragmentIllust.newInstance(illustsBean);
                         } else {
-                            return FragmentSingleIllust.newInstance(idWithList.getList().get(position));
+                            return FragmentSingleIllust.newInstance(illustsBean);
                         }
                     }
                 }
 
                 @Override
                 public int getCount() {
-                    return pageSize;
+                    return pageData.getList().size();
+                }
+
+                @Nullable
+                @org.jetbrains.annotations.Nullable
+                @Override
+                public Parcelable saveState() {
+                    Bundle bundle = (Bundle) super.saveState();
+                    if (bundle != null) {
+                        bundle.putParcelableArray("states", null);
+                    }
+                    return bundle;
                 }
             });
-            if (pageSize == 1) {
-                if (Shaft.sSettings.isSaveViewHistory()) {
-                    PixivOperate.insertIllustViewHistory(idWithList.getList().get(0));
-                }
-            } else {
-                baseBind.viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-                    @Override
-                    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+            baseBind.viewPager.setOffscreenPageLimit(2);
 
+            ViewPager.OnPageChangeListener listener = new ViewPager.OnPageChangeListener() {
+                @Override
+                public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+                }
+
+                @Override
+                public void onPageSelected(int position) {
+                    Common.showLog("Container onPageSelected " + position);
+                    if (Common.isEmpty(pageData.getList())) {
+                        return;
                     }
 
-                    @Override
-                    public void onPageSelected(int position) {
-                        Common.showLog("VActivity onPageSelected " + position);
-                        if (Shaft.sSettings.isSaveViewHistory()) {
-                            PixivOperate.insertIllustViewHistory(idWithList.getList().get(position));
+                    if (position >= pageData.getList().size()) {
+                        return;
+                    }
+
+                    if (Shaft.sSettings.isSaveViewHistory()) {
+                        PixivOperate.insertIllustViewHistory(pageData.getList().get(position));
+                    }
+
+                    if (position == (pageData.getList().size() - 1) || position == (pageData.getList().size() - 2)) {
+                        String nextUrl = pageData.getNextUrl();
+                        if (!TextUtils.isEmpty(nextUrl)) {
+                            if (!Container.get().isNetworking()) {
+                                Common.showLog("Container 去请求下一页 " + nextUrl);
+                                Retro.getAppApi().getNextIllust(Shaft.sUserModel.getAccess_token(), nextUrl)
+                                        .subscribeOn(Schedulers.newThread())
+                                        .observeOn(AndroidSchedulers.mainThread())
+                                        .subscribe(new NullCtrl<ListIllust>() {
+                                            @Override
+                                            public void success(ListIllust listIllust) {
+                                                Mapper mapper = new Mapper<ListIllust>();
+                                                listIllust = (ListIllust) mapper.apply(listIllust);
+                                                Common.showLog("Container 下一页请求成功 ");
+                                                Intent intent = new Intent(Params.FRAGMENT_ADD_DATA);
+                                                intent.putExtra(Params.PAGE_UUID, pageUUID);
+                                                intent.putExtra(Params.CONTENT, listIllust);
+                                                LocalBroadcastManager.getInstance(Shaft.getContext()).sendBroadcast(intent);
+
+                                                // pageData.getList().addAll(listIllust.getList());
+                                                DeduplicateArrayList.addAllWithNoRepeat(pageData.getList(), listIllust.getList());
+                                                pageData.setNextUrl(listIllust.getNextUrl());
+                                                if (baseBind.viewPager.getAdapter() != null) {
+                                                    baseBind.viewPager.getAdapter().notifyDataSetChanged();
+                                                }
+                                            }
+
+                                            @Override
+                                            public void must() {
+                                                super.must();
+                                                Container.get().setNetworking(false);
+                                            }
+
+                                            @Override
+                                            public void subscribe(Disposable d) {
+                                                super.subscribe(d);
+                                                Container.get().setNetworking(true);
+                                            }
+                                        });
+                            } else {
+                                Common.showLog("Container 不去请求下一页 00");
+                            }
+                        } else {
+                            Common.showLog("Container 不去请求下一页 11");
                         }
                     }
+                }
 
-                    @Override
-                    public void onPageScrollStateChanged(int state) {
+                @Override
+                public void onPageScrollStateChanged(int state) {
 
-                    }
-                });
-            }
-            if (index < pageSize) {
+                }
+            };
+            baseBind.viewPager.addOnPageChangeListener(listener);
+
+            if(index < pageData.getList().size()){
                 baseBind.viewPager.setCurrentItem(index);
+            }
+
+            if(index == 0){
+                baseBind.viewPager.post(() -> listener.onPageSelected(baseBind.viewPager.getCurrentItem()));
             }
         } else {
             finish();
@@ -97,6 +180,22 @@ public class VActivity extends BaseActivity<ActivityViewPagerBinding> {
     @Override
     protected void initData() {
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        PixivOperate.clearBack();
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onPause() {
+        //通知外界列表，滚动到正确的位置
+        Intent intent = new Intent(Params.FRAGMENT_SCROLL_TO_POSITION);
+        intent.putExtra(Params.INDEX, baseBind.viewPager.getCurrentItem());
+        intent.putExtra(Params.PAGE_UUID, pageUUID);
+        LocalBroadcastManager.getInstance(Shaft.getContext()).sendBroadcast(intent);
+        super.onPause();
     }
 
     @Override

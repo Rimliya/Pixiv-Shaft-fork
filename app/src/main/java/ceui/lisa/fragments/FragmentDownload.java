@@ -9,23 +9,24 @@ import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
 import com.ToxicBakery.viewpager.transforms.DrawerTransformer;
-import com.blankj.utilcode.util.BarUtils;
 import com.qmuiteam.qmui.skin.QMUISkinManager;
 import com.qmuiteam.qmui.widget.dialog.QMUIDialog;
 import com.qmuiteam.qmui.widget.dialog.QMUIDialogAction;
 
 import ceui.lisa.R;
 import ceui.lisa.activities.Shaft;
+import ceui.lisa.core.Manager;
 import ceui.lisa.database.AppDatabase;
 import ceui.lisa.databinding.ViewpagerWithTablayoutBinding;
 import ceui.lisa.utils.Common;
+import ceui.lisa.utils.MyOnTabSelectedListener;
 
 /**
  * 下载管理
  */
 public class FragmentDownload extends BaseFragment<ViewpagerWithTablayoutBinding> {
 
-    private Fragment[] allPages = new Fragment[]{new FragmentDownloading(), new FragmentDownloadFinish()};
+    private final Fragment[] allPages = new Fragment[]{new FragmentDownloading(), new FragmentDownloadFinish()};
 
     @Override
     public void initLayout() {
@@ -38,8 +39,8 @@ public class FragmentDownload extends BaseFragment<ViewpagerWithTablayoutBinding
                 Shaft.getContext().getString(R.string.now_downloading),
                 Shaft.getContext().getString(R.string.has_download)
         };
-        BarUtils.setStatusBarColor(mActivity, android.R.attr.colorPrimary);
         baseBind.toolbarTitle.setText(R.string.string_203);
+        baseBind.toolbar.inflateMenu(R.menu.start_all);
         baseBind.toolbar.setNavigationOnClickListener(v -> mActivity.finish());
         baseBind.toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
@@ -71,6 +72,42 @@ public class FragmentDownload extends BaseFragment<ViewpagerWithTablayoutBinding
                         Common.showToast("没有可删除的记录");
                     }
                     return true;
+                } else if (item.getItemId() == R.id.action_start) {
+                    Manager.get().startAll();
+                    if(allPages[0] instanceof FragmentDownloading){
+                        ((FragmentDownloading) allPages[0]).mAdapter.notifyDataSetChanged();
+                    }
+                } else if (item.getItemId() == R.id.action_stop) {
+                    Manager.get().stopAll();
+                    if(allPages[0] instanceof FragmentDownloading){
+                        ((FragmentDownloading) allPages[0]).mAdapter.notifyDataSetChanged();
+                    }
+                } else if (item.getItemId() == R.id.action_clear) {
+                    if (allPages[0] instanceof FragmentDownloading &&
+                            ((FragmentDownloading) allPages[0]).getCount() > 0) {
+                        new QMUIDialog.MessageDialogBuilder(mActivity)
+                                .setTitle("提示")
+                                .setMessage("清空所有未完成的任务吗？")
+                                .setSkinManager(QMUISkinManager.defaultInstance(mActivity))
+                                .addAction("取消", new QMUIDialogAction.ActionListener() {
+                                    @Override
+                                    public void onClick(QMUIDialog dialog, int index) {
+                                        dialog.dismiss();
+                                    }
+                                })
+                                .addAction(0, "清空", QMUIDialogAction.ACTION_PROP_NEGATIVE, new QMUIDialogAction.ActionListener() {
+                                    @Override
+                                    public void onClick(QMUIDialog dialog, int index) {
+                                        Manager.get().clearAll();
+                                        ((FragmentDownloading) allPages[0]).clearAndRefresh();
+                                        Common.showToast("下载任务清除成功");
+                                        dialog.dismiss();
+                                    }
+                                })
+                                .show();
+                    } else {
+                        Common.showToast("没有可删除的记录");
+                    }
                 }
                 return false;
             }
@@ -96,6 +133,8 @@ public class FragmentDownload extends BaseFragment<ViewpagerWithTablayoutBinding
 
         });
         baseBind.tabLayout.setupWithViewPager(baseBind.viewPager);
+        MyOnTabSelectedListener listener = new MyOnTabSelectedListener(allPages);
+        baseBind.tabLayout.addOnTabSelectedListener(listener);
         baseBind.viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int i, float v, int i1) {
@@ -105,10 +144,10 @@ public class FragmentDownload extends BaseFragment<ViewpagerWithTablayoutBinding
             @Override
             public void onPageSelected(int i) {
                 if (i == 0) {
-                    Common.showLog("清空menu");
                     baseBind.toolbar.getMenu().clear();
+                    baseBind.toolbar.inflateMenu(R.menu.start_all);
                 } else {
-                    Common.showLog("添加menu");
+                    baseBind.toolbar.getMenu().clear();
                     baseBind.toolbar.inflateMenu(R.menu.delete_all);
                 }
             }

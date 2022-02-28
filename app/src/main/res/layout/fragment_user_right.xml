@@ -82,6 +82,7 @@
                         android:layout_width="wrap_content"
                         android:id="@+id/real_twitter"
                         android:autoLink="all"
+                        android:textColor="@color/rank_text_color"
                         android:textColorLink="?attr/colorPrimary"
                         android:layout_centerVertical="true"
                         android:layout_marginEnd="@dimen/sixteen_dp"
@@ -112,6 +113,7 @@
                         android:layout_width="wrap_content"
                         android:layout_centerVertical="true"
                         android:autoLink="all"
+                        android:textColor="@color/rank_text_color"
                         android:textColorLink="?attr/colorPrimary"
                         android:layout_marginEnd="@dimen/sixteen_dp"
                         android:layout_toEndOf="@+id/address"
@@ -142,6 +144,7 @@
                         android:layout_width="wrap_content"
                         android:layout_centerVertical="true"
                         android:autoLink="all"
+                        android:textColor="@color/rank_text_color"
                         android:textColorLink="?attr/colorPrimary"
                         android:layout_marginEnd="@dimen/sixteen_dp"
                         android:layout_toEndOf="@+id/job"
@@ -149,6 +152,22 @@
                         android:layout_height="wrap_content">
 
                     </TextView>
+
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/ban_user_rela">
+
+                    <TextView
+                        style="@style/setting_text_left"
+                        android:text="@string/string_380" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/ban_user"
+                        android:checked="false"
+                        style="@style/setting_right_switch"/>
 
                 </RelativeLayout>
 
@@ -202,7 +221,7 @@
                     android:autoLink="all"
                     android:textIsSelectable="true"
                     android:textColorLink="?attr/colorPrimary"
-                    android:textColor="@color/black"
+                    android:textColor="@color/rank_text_color"
                     android:textSize="14sp">
 
                 </TextView>

@@ -8,31 +8,33 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
 
-import com.blankj.utilcode.util.BarUtils;
 
 import ceui.lisa.R;
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.activities.TemplateActivity;
-import ceui.lisa.databinding.FragmentNewNovelBinding;
+import ceui.lisa.databinding.ViewpagerWithTablayoutBinding;
+import ceui.lisa.utils.MyOnTabSelectedListener;
 import ceui.lisa.utils.Params;
 
-public class FragmentNewNovel extends BaseFragment<FragmentNewNovelBinding> {
+public class FragmentNewNovel extends BaseFragment<ViewpagerWithTablayoutBinding> {
 
     @Override
     public void initLayout() {
-        mLayoutID = R.layout.fragment_new_novel;
+        mLayoutID = R.layout.viewpager_with_tablayout;
     }
 
     @Override
     public void initView() {
-        BarUtils.setStatusBarColor(mActivity, android.R.attr.colorPrimary);
-        String[] TITLES = new String[]{
+        final String[] TITLES = new String[]{
                 Shaft.getContext().getString(R.string.recommend_illust),
                 Shaft.getContext().getString(R.string.hot_tag)
         };
-        baseBind.toolbar.setNavigationOnClickListener(v -> {
-            mActivity.finish();
-        });
+        final Fragment[] mFragments = new Fragment[]{
+                new FragmentRecmdNovel(),
+                FragmentHotTag.newInstance(Params.TYPE_NOVEL)
+        };
+        baseBind.toolbarTitle.setText(R.string.type_novel);
+        baseBind.toolbar.setNavigationOnClickListener(v -> finish());
         baseBind.toolbar.inflateMenu(R.menu.fragment_left);
         baseBind.toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
@@ -50,11 +52,7 @@ public class FragmentNewNovel extends BaseFragment<FragmentNewNovelBinding> {
             @NonNull
             @Override
             public Fragment getItem(int i) {
-                if (i == 0) {
-                    return new FragmentRecmdNovel();
-                } else {
-                    return FragmentHotTag.newInstance(Params.TYPE_NOVEL);
-                }
+                return mFragments[i];
             }
 
             @Override
@@ -69,5 +67,7 @@ public class FragmentNewNovel extends BaseFragment<FragmentNewNovelBinding> {
             }
         });
         baseBind.tabLayout.setupWithViewPager(baseBind.viewPager);
+        MyOnTabSelectedListener listener = new MyOnTabSelectedListener(mFragments);
+        baseBind.tabLayout.addOnTabSelectedListener(listener);
     }
 }

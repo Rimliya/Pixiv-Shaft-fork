@@ -17,6 +17,7 @@ import ceui.lisa.model.ListSimpleUser;
 import ceui.lisa.model.ListTag;
 import ceui.lisa.model.ListTrendingtag;
 import ceui.lisa.model.ListUser;
+import ceui.lisa.model.RecmdIllust;
 import ceui.lisa.models.CommentHolder;
 import ceui.lisa.models.GifResponse;
 import ceui.lisa.models.IllustSearchResponse;
@@ -26,6 +27,7 @@ import ceui.lisa.models.NovelSearchResponse;
 import ceui.lisa.models.NullResponse;
 import ceui.lisa.models.Preset;
 import ceui.lisa.models.UserDetailResponse;
+import ceui.lisa.models.UserFollowDetail;
 import ceui.lisa.models.UserState;
 import io.reactivex.Observable;
 import okhttp3.MultipartBody;
@@ -69,11 +71,11 @@ public interface AppApi {
      * @return
      */
     @GET("v1/illust/recommended?include_privacy_policy=true&filter=for_android&include_ranking_illusts=true")
-    Observable<ListIllust> getRecmdIllust(@Header("Authorization") String token);
+    Observable<RecmdIllust> getRecmdIllust(@Header("Authorization") String token);
 
 
     @GET("v1/manga/recommended?include_privacy_policy=true&filter=for_android&include_ranking_illusts=true")
-    Observable<ListIllust> getRecmdManga(@Header("Authorization") String token);
+    Observable<RecmdIllust> getRecmdManga(@Header("Authorization") String token);
 
     @GET("v1/novel/recommended?include_privacy_policy=true&filter=for_android&include_ranking_novels=true")
     Observable<ListNovel> getRecmdNovel(@Header("Authorization") String token);
@@ -107,17 +109,26 @@ public interface AppApi {
      * search_target=exact_match_for_tags 标签完全匹配
      * search_target=partial_match_for_tags 标签部分匹配
      * search_target=title_and_caption 标题或简介
+     * start_date 开始时间
+     * end_date 结束时间
      */
-    @GET("v1/search/illust?filter=for_android&include_translated_tag_results=true")
+    @GET("v1/search/illust?filter=for_android&include_translated_tag_results=true&merge_plain_keyword_results=true")
     Observable<ListIllust> searchIllust(@Header("Authorization") String token,
                                         @Query("word") String word,
                                         @Query("sort") String sort,
+                                        @Query("start_date") String startDate,
+                                        @Query("end_date") String endDate,
                                         @Query("search_target") String search_target);
 
-    @GET("v1/search/novel?filter=for_android&include_translated_tag_results=true")
+    /**
+     * search_target=exact_match_for_tags,partial_match_for_tags,text(文本),keyword(关键词)
+     */
+    @GET("v1/search/novel?filter=for_android&include_translated_tag_results=true&merge_plain_keyword_results=true")
     Observable<ListNovel> searchNovel(@Header("Authorization") String token,
                                       @Query("word") String word,
                                       @Query("sort") String sort,
+                                      @Query("start_date") String startDate,
+                                      @Query("end_date") String endDate,
                                       @Query("search_target") String search_target);
 
 
@@ -146,6 +157,12 @@ public interface AppApi {
     Observable<ListIllust> getUserLikeIllust(@Header("Authorization") String token,
                                              @Query("user_id") int user_id,
                                              @Query("restrict") String restrict);
+
+    @GET("v1/user/bookmarks/novel")
+    Observable<ListNovel> getUserLikeNovel(@Header("Authorization") String token,
+                                           @Query("user_id") int user_id,
+                                           @Query("restrict") String restrict,
+                                           @Query("tag") String tag);
 
     @GET("v1/user/bookmarks/novel")
     Observable<ListNovel> getUserLikeNovel(@Header("Authorization") String token,
@@ -195,6 +212,10 @@ public interface AppApi {
     Observable<NullResponse> postUnFollow(@Header("Authorization") String token,
                                           @Field("user_id") int user_id);
 
+    @GET("v1/user/follow/detail")
+    Observable<UserFollowDetail> getFollowDetail(@Header("Authorization") String token,
+                                                 @Query("user_id") int user_id);
+
 
     /**
      * 获取userid 所关注的人
@@ -217,9 +238,12 @@ public interface AppApi {
 
 
     @GET("v1/illust/comments")
-    Observable<ListComment> getComment(@Header("Authorization") String token,
-                                       @Query("illust_id") int illust_id);
+    Observable<ListComment> getIllustComment(@Header("Authorization") String token,
+                                             @Query("illust_id") int illust_id);
 
+    @GET("v1/novel/comments")
+    Observable<ListComment> getNovelComment(@Header("Authorization") String token,
+                                       @Query("novel_id") int novel_id);
 
     @GET
     Observable<ListComment> getNextComment(@Header("Authorization") String token,
@@ -228,14 +252,27 @@ public interface AppApi {
 
     @FormUrlEncoded
     @POST("v1/illust/comment/add")
-    Observable<CommentHolder> postComment(@Header("Authorization") String token,
-                                          @Field("illust_id") int illust_id,
-                                          @Field("comment") String comment);
+    Observable<CommentHolder> postIllustComment(@Header("Authorization") String token,
+                                                @Field("illust_id") int illust_id,
+                                                @Field("comment") String comment);
 
     @FormUrlEncoded
     @POST("v1/illust/comment/add")
-    Observable<CommentHolder> postComment(@Header("Authorization") String token,
-                                          @Field("illust_id") int illust_id,
+    Observable<CommentHolder> postIllustComment(@Header("Authorization") String token,
+                                                @Field("illust_id") int illust_id,
+                                                @Field("comment") String comment,
+                                                @Field("parent_comment_id") int parent_comment_id);
+
+    @FormUrlEncoded
+    @POST("v1/novel/comment/add")
+    Observable<CommentHolder> postNovelComment(@Header("Authorization") String token,
+                                          @Field("novel_id") int novel_id,
+                                          @Field("comment") String comment);
+
+    @FormUrlEncoded
+    @POST("v1/novel/comment/add")
+    Observable<CommentHolder> postNovelComment(@Header("Authorization") String token,
+                                          @Field("novel_id") int novel_id,
                                           @Field("comment") String comment,
                                           @Field("parent_comment_id") int parent_comment_id);
 
@@ -279,13 +316,19 @@ public interface AppApi {
                                     @Query("word") String word);
 
 
-    @GET("v1/search/popular-preview/illust?filter=for_android&include_translated_tag_results=true&merge_plain_keyword_results=true&search_target=exact_match_for_tags")
+    @GET("v1/search/popular-preview/illust?filter=for_android&include_translated_tag_results=true&merge_plain_keyword_results=true")
     Observable<ListIllust> popularPreview(@Header("Authorization") String token,
-                                          @Query("word") String word);
+                                          @Query("word") String word,
+                                          @Query("start_date") String startDate,
+                                          @Query("end_date") String endDate,
+                                          @Query("search_target") String search_target);
 
-    @GET("v1/search/popular-preview/novel?filter=for_android&include_translated_tag_results=true&merge_plain_keyword_results=true&search_target=exact_match_for_tags")
+    @GET("v1/search/popular-preview/novel?filter=for_android&include_translated_tag_results=true&merge_plain_keyword_results=true")
     Observable<ListNovel> popularNovelPreview(@Header("Authorization") String token,
-                                          @Query("word") String word);
+                                          @Query("word") String word,
+                                          @Query("start_date") String startDate,
+                                          @Query("end_date") String endDate,
+                                          @Query("search_target") String search_target);
 
 
     // v2/search/autocomplete?merge_plain_keyword_results=true&word=%E5%A5%B3%E4%BD%93 HTTP/1.1
@@ -295,11 +338,20 @@ public interface AppApi {
 
 
     /**
-     * 获取收藏的标签
+     * 获取插画收藏的标签
      */
     //GET v1/user/bookmark-tags/illust?user_id=41531382&restrict=public HTTP/1.1
     @GET("v1/user/bookmark-tags/illust")
     Observable<ListTag> getBookmarkTags(@Header("Authorization") String token,
+                                        @Query("user_id") int user_id,
+                                        @Query("restrict") String restrict);
+
+    /**
+     * 获取小说收藏的标签
+     */
+    //GET v1/user/bookmark-tags/novel?user_id=41531382&restrict=public HTTP/1.1
+    @GET("v1/user/bookmark-tags/novel")
+    Observable<ListTag> getNovelBookmarkTags(@Header("Authorization") String token,
                                         @Query("user_id") int user_id,
                                         @Query("restrict") String restrict);
 
@@ -438,6 +490,31 @@ public interface AppApi {
                                                      @Url String next_url);
 
     @GET
-    Observable<ListArticle> getNextArticals(@Header("Authorization") String token,
+    Observable<ListArticle> getNextArticles(@Header("Authorization") String token,
                                             @Url String next_url);
+
+
+    //https://app-api.pixiv.net/web/v1/login?code_challenge=
+    // BpI4XJUk4nHHBwbhTNdunQDhB4Ca0M3yBcC_v7E0lUw&
+
+    @GET("web/v1/login?code_challenge_method=S256&client=pixiv-android")
+    Observable<String> tryLogin(@Query("code_challenge") String code_challenge);
+
+    // 添加小说书签 相同id只能有1个 不同页数会直接覆盖
+    @FormUrlEncoded
+    @POST("v1/novel/marker/add")
+    Observable<NullResponse> postAddNovelMarker(@Header("Authorization") String token,
+                                           @Field("novel_id") int novel_id,
+                                           @Field("page") int page);
+
+    // 删除小说书签
+    @FormUrlEncoded
+    @POST("v1/novel/marker/delete")
+    Observable<NullResponse> postDeleteNovelMarker(@Header("Authorization") String token,
+                                                @Field("novel_id") int novel_id);
+
+    // 推荐用户
+    @GET("v1/user/related?filter=for_android")
+    Observable<ListUser> getRelatedUsers(@Header("Authorization") String token,
+                                             @Query("seed_user_id") int seed_user_id);
 }

@@ -9,8 +9,8 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
+        android:layout_height="match_parent"
+        android:background="@color/fragment_center">
 
             <include
                 android:id="@+id/toolbar"
@@ -40,7 +40,7 @@
                                 android:layout_centerHorizontal="true"
                                 android:layout_marginTop="40dp"
                                 android:scaleType="centerCrop"
-                                android:src="@mipmap/avatar" />
+                                android:src="@drawable/avatar" />
 
                             <Button
                                 android:id="@+id/change_head"
@@ -79,7 +79,8 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_gravity="center_vertical"
-                                android:layout_marginEnd="@dimen/sixteen_dp">
+                                android:layout_marginEnd="@dimen/sixteen_dp"
+                                android:popupBackground="@color/fragment_center">
 
 
                             </androidx.appcompat.widget.AppCompatSpinner>
@@ -137,6 +138,44 @@
 
                         <View style="@style/half_divider" />
 
+                        <LinearLayout
+                            android:id="@+id/birthdayArea"
+                            style="@style/LinearHorizon">
+
+                            <TextView
+                                style="@style/AboutUserLeft"
+                                android:layout_width="60dp"
+                                android:text="@string/string_412">
+
+                            </TextView>
+
+                            <TextView
+                                android:id="@+id/birthday"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginStart="@dimen/eight_dp"
+                                android:text=""
+                                android:textSize="15sp"
+                                android:textColor="@color/deep_dark">
+
+                            </TextView>
+
+                            <ImageView
+                                android:layout_width="@dimen/twenty_four_dp"
+                                android:layout_height="@dimen/twenty_four_dp"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginEnd="@dimen/twenty_four_dp"
+                                android:src="@drawable/ic_date_range_black_24dp"
+                                app:tint="?attr/colorPrimary">
+
+                            </ImageView>
+
+                        </LinearLayout>
+
+                        <View style="@style/half_divider" />
+
                         <LinearLayout style="@style/LinearHorizon">
 
                             <TextView
@@ -170,7 +209,7 @@
                             <View
                                 android:layout_width="match_parent"
                                 android:layout_height="1dp"
-                                android:layout_marginTop="@dimen/tweenty_four_dp"
+                                android:layout_marginTop="@dimen/twenty_four_dp"
                                 android:background="@color/about_user_divider">
 
                             </View>
@@ -184,6 +223,7 @@
 
                                 <EditText
                                     android:id="@+id/user_name"
+                                    android:inputType="text"
                                     style="@style/AboutUserRightDarkText" />
 
                             </LinearLayout>
@@ -199,6 +239,7 @@
 
                                 <EditText
                                     android:id="@+id/webpage"
+                                    android:inputType="text"
                                     style="@style/AboutUserRightDarkText" />
 
                             </LinearLayout>
@@ -215,6 +256,7 @@
 
                                 <EditText
                                     android:id="@+id/twitter"
+                                    android:inputType="text"
                                     style="@style/AboutUserRightDarkText" />
 
                             </LinearLayout>
@@ -231,6 +273,7 @@
 
                                 <EditText
                                     android:id="@+id/comment"
+                                    android:inputType="text"
                                     style="@style/AboutUserRightDarkText" />
 
                             </LinearLayout>

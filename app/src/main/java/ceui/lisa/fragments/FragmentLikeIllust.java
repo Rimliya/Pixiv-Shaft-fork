@@ -11,8 +11,9 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import ceui.lisa.R;
+import ceui.lisa.activities.Shaft;
 import ceui.lisa.adapters.BaseAdapter;
-import ceui.lisa.adapters.IAdapter;
+import ceui.lisa.adapters.IAdapterWithStar;
 import ceui.lisa.core.RemoteRepo;
 import ceui.lisa.database.AppDatabase;
 import ceui.lisa.databinding.FragmentBaseListBinding;
@@ -91,7 +92,10 @@ public class FragmentLikeIllust extends NetListFragment<FragmentBaseListBinding,
 
     @Override
     public BaseAdapter<IllustsBean, RecyIllustStaggerBinding> adapter() {
-        return new IAdapter(allItems, mContext);
+        boolean isOwnPage = Shaft.sUserModel.getUser().getUserId() == userID;
+        return new IAdapterWithStar(allItems, mContext).setHideStarIcon(
+                isOwnPage && Shaft.sSettings.isHideStarButtonAtMyCollection()
+        );
     }
 
     @Override

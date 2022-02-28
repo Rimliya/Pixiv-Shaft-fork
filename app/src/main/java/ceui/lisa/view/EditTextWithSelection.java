@@ -2,12 +2,11 @@ package ceui.lisa.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-public class EditTextWithSelection extends EditText {
+public class EditTextWithSelection extends androidx.appcompat.widget.AppCompatEditText {
 
     private OnSelectionChange mOnSelectionChange;
 

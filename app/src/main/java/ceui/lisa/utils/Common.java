@@ -1,45 +1,62 @@
 package ceui.lisa.utils;
 
 import android.app.Activity;
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.ContentResolver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
-import android.provider.MediaStore;
+import android.os.Build;
+import android.provider.OpenableColumns;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.LayoutInflater;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
 
+import com.blankj.utilcode.util.AppUtils;
+import com.blankj.utilcode.util.FileIOUtils;
+import com.blankj.utilcode.util.Utils;
 import com.facebook.rebound.SimpleSpringListener;
 import com.facebook.rebound.Spring;
 import com.facebook.rebound.SpringChain;
+import com.hjq.toast.ToastUtils;
 import com.qmuiteam.qmui.skin.QMUISkinManager;
 import com.qmuiteam.qmui.widget.dialog.QMUIDialog;
 import com.qmuiteam.qmui.widget.dialog.QMUIDialogAction;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.stream.IntStream;
 
+import androidx.core.content.ContextCompat;
 import ceui.lisa.R;
+import ceui.lisa.activities.MainActivity;
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.activities.TemplateActivity;
 import ceui.lisa.activities.UserActivity;
-import ceui.lisa.activities.BaseActivity;
+import ceui.lisa.database.AppDatabase;
+import ceui.lisa.database.UserEntity;
+import ceui.lisa.download.FileCreator;
+import ceui.lisa.file.LegacyFile;
+import ceui.lisa.file.SAFile;
+import ceui.lisa.models.IllustsBean;
 import ceui.lisa.models.UserContainer;
 import okhttp3.MediaType;
 import okhttp3.Response;
@@ -49,7 +66,8 @@ import okio.BufferedSource;
 
 public class Common {
 
-    private static Toast toast = null;
+    private static final String[][] safeReplacer = new String[][]{{"|", "%7c"}, {"\\", "%5c"}, {"?", "%3f"},
+            {"*", "\u22c6"}, {"<", "%3c"}, {"\"", "%22"}, {":", "%3a"}, {">", "%3e"}, {"/", "%2f"}};
 
     public static boolean isNumeric(String str) {
         for (int i = str.length(); --i >= 0; ) {
@@ -74,42 +92,23 @@ public class Common {
         }
     }
 
-    public static void logOut(Context context) {
+    public static void logOut(Context context, boolean deleteUser) {
         if (Shaft.sUserModel != null) {
-            Shaft.sUserModel.getResponse().getUser().setIs_login(false);
-            Local.saveUser(Shaft.sUserModel);
+            if (!Dev.isDev) { //测试状态，不要真的退出登录，只是跳转到登录页面
+                Shaft.sUserModel.getUser().setIs_login(false);
+                Local.saveUser(Shaft.sUserModel);
+                if(deleteUser){
+                    UserEntity userEntity = new UserEntity();
+                    userEntity.setUserID(Shaft.sUserModel.getUserId());
+                    AppDatabase.getAppDatabase(context)
+                            .downloadDao().deleteUser(userEntity);
+                }
+            }
             Intent intent = new Intent(context, TemplateActivity.class);
             intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "登录注册");
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             context.startActivity(intent);
         }
-    }
-
-    public static String getRealFilePath(final Context context, final Uri uri) {
-        if (null == uri) return null;
-        final String scheme = uri.getScheme();
-        String data = null;
-        if (scheme == null)
-            data = uri.getPath();
-        else if (ContentResolver.SCHEME_FILE.equals(scheme)) {
-            data = uri.getPath();
-        } else if (ContentResolver.SCHEME_CONTENT.equals(scheme)) {
-            Cursor cursor = context.getContentResolver().query(uri,
-                    new String[]{MediaStore.Images.ImageColumns.DATA}, null, null, null);
-            if (null != cursor) {
-                if (cursor.moveToFirst()) {
-                    int index = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-                    if (index > -1) {
-                        data = cursor.getString(index);
-                    }
-                }
-                cursor.close();
-            }
-        }
-        return data;
-    }
-
-    public void showUriDialog(BaseActivity<?> activity) {
-
     }
 
     public static <T> void showLog(T t) {
@@ -117,51 +116,16 @@ public class Common {
     }
 
     public static <T> void showToast(T t) {
-        if (toast != null) {
-            toast.cancel();
-        }
-        toast = Toast.makeText(Shaft.getContext(), String.valueOf(t), Toast.LENGTH_SHORT);
-        View view = LayoutInflater.from(Shaft.getContext()).inflate(R.layout.toast_item, null);
-        TextView textView = view.findViewById(R.id.toast_text);
-        textView.setText(String.valueOf(t));
-        toast.setView(view);
-        toast.show();
+        ToastUtils.show(t);
     }
 
+    public static void showToast(int id) {
+        ToastUtils.show(id);
+    }
 
     //2成功， 3失败， 4info
     public static <T> void showToast(T t, int type) {
-        if (type == 2) {
-            if (toast != null) {
-                toast.cancel();
-            }
-            toast = Toast.makeText(Shaft.getContext(), String.valueOf(t), Toast.LENGTH_SHORT);
-            View v = LayoutInflater.from(Shaft.getContext()).inflate(R.layout.toast_item_green, null);
-            TextView textView = v.findViewById(R.id.toast_text);
-            textView.setText(String.valueOf(t));
-            toast.setView(v);
-            toast.show();
-        } else if (type == 3) {
-            if (toast != null) {
-                toast.cancel();
-            }
-            toast = Toast.makeText(Shaft.getContext(), String.valueOf(t), Toast.LENGTH_SHORT);
-            View v = LayoutInflater.from(Shaft.getContext()).inflate(R.layout.toast_item_green_red, null);
-            TextView textView = v.findViewById(R.id.toast_text);
-            textView.setText(String.valueOf(t));
-            toast.setView(v);
-            toast.show();
-        } else if (type == 4) {
-            if (toast != null) {
-                toast.cancel();
-            }
-            toast = Toast.makeText(Shaft.getContext(), String.valueOf(t), Toast.LENGTH_SHORT);
-            View v = LayoutInflater.from(Shaft.getContext()).inflate(R.layout.toast_item_gray, null);
-            TextView textView = v.findViewById(R.id.toast_text);
-            textView.setText(String.valueOf(t));
-            toast.setView(v);
-            toast.show();
-        }
+        ToastUtils.show(t);
     }
 
     public static String getAppVersionCode(Context context) {
@@ -193,30 +157,15 @@ public class Common {
     }
 
     public static <T> void showToast(T t, boolean isLong) {
-        if (toast == null) {
-            toast = Toast.makeText(Shaft.getContext(), String.valueOf(t), isLong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
-        } else {
-            toast.cancel();
-            toast = Toast.makeText(Shaft.getContext(), String.valueOf(t), isLong ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
-        }
-        View view = LayoutInflater.from(Shaft.getContext()).inflate(R.layout.toast_item, null);
-        TextView textView = view.findViewById(R.id.toast_text);
-        textView.setText(String.valueOf(t));
-        toast.setView(view);
-        toast.show();
+        ToastUtils.show(t);
     }
 
     public static void copy(Context context, String s) {
-        copy(context, s, true);
+        ClipBoardUtils.putTextIntoClipboard(context, s, true);
     }
 
     public static void copy(Context context, String s, boolean hasHint) {
-        ClipboardManager cm = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData mClipData = ClipData.newPlainText("Label", s);
-        cm.setPrimaryClip(mClipData);
-        if (hasHint) {
-            showToast(s + context.getString(R.string.has_copyed));
-        }
+        ClipBoardUtils.putTextIntoClipboard(context, s, hasHint);
     }
 
     public static String checkEmpty(String before) {
@@ -238,7 +187,6 @@ public class Common {
         for (int i = 0; i < childCount; i++) {
             final View view = linearLayout.getChildAt(i);
 
-            final int position = i;
             springChain.addSpring(new SimpleSpringListener() {
                 @Override
                 public void onSpringUpdate(Spring spring) {
@@ -262,14 +210,16 @@ public class Common {
                 .addAction(context.getString(R.string.string_189), new QMUIDialogAction.ActionListener() {
                     @Override
                     public void onClick(QMUIDialog dialog, int index) {
-                        Local.setBoolean(Params.SHOW_DIALOG, false);
+                        //保存SHOW_DIALOG 为false，不再提示
+                        Shaft.getMMKV().encode(Params.SHOW_DIALOG, false);
                         dialog.dismiss();
                     }
                 })
                 .addAction(context.getString(R.string.string_190), new QMUIDialogAction.ActionListener() {
                     @Override
                     public void onClick(QMUIDialog dialog, int index) {
-                        Local.setBoolean(Params.SHOW_DIALOG, true);
+                        //保存SHOW_DIALOG 为true，需要继续提示
+                        Shaft.getMMKV().encode(Params.SHOW_DIALOG, true);
                         dialog.dismiss();
                     }
                 })
@@ -283,7 +233,7 @@ public class Common {
 
     public static String getResponseBody(Response response) {
 
-        Charset UTF8 = Charset.forName("UTF-8");
+        Charset UTF8 = StandardCharsets.UTF_8;
         ResponseBody responseBody = response.body();
         BufferedSource source = responseBody.source();
         try {
@@ -291,7 +241,7 @@ public class Common {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Buffer buffer = source.buffer();
+        Buffer buffer = source.getBuffer();
 
         Charset charset = UTF8;
         MediaType contentType = responseBody.contentType();
@@ -328,8 +278,202 @@ public class Common {
         }
     }
 
+    public static boolean isAndroidQ() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
+    }
 
-    public static String getPathByName(String name) {
-        return Shaft.getContext().getExternalCacheDir() + "/" + name;
+    public static void restart() {
+        Intent intent = new Intent();
+        String realActivityClassName = MainActivity.class.getName();
+        intent.setComponent(new ComponentName(Utils.getApp(), realActivityClassName));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        Utils.getApp().startActivity(intent);
+    }
+
+    /**
+     * left 0, right 5
+     *
+     * 结果只有 0 1 2 3 4
+     *
+     *
+     * @param left
+     * @param right
+     * @return
+     */
+    public static int flatRandom(int left, int right) {
+        Random r = new Random();
+        return r.nextInt(right - left) + left;
+    }
+
+    public static int flatRandom(int right) {
+        return flatRandom(0, right);
+    }
+
+    /**
+     * 解析主题相关的 attribute 的当前值
+     */
+    public static int resolveThemeAttribute(Context context, int resId){
+        TypedValue typedValue = new TypedValue();
+        context.getTheme().resolveAttribute(resId, typedValue, true);
+        return typedValue.data;
+    }
+
+    /**
+     * 移除文件系统保留字符
+     */
+    public static String removeFSReservedChars(String s){
+        try {
+            for (String[] strings : safeReplacer) {
+                s = s.replace(strings[0], strings[1]);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return s;
+    }
+
+    /**
+     * 检查插画是否已经下载过
+     * */
+    public static boolean isIllustDownloaded(IllustsBean illust) {
+        try {
+            if (illust.getPage_count() == 1) {
+                if (Shaft.sSettings.getDownloadWay() == 1) {
+                    return SAFile.isFileExists(Shaft.getContext(), illust);
+                } else {
+                    return FileCreator.isExist(illust, 0);
+                }
+            } else {
+                IntStream pageIndexStream = IntStream.range(0, illust.getPage_count() - 1);
+                if (Shaft.sSettings.getDownloadWay() == 1) {
+                    return pageIndexStream
+                            .allMatch(index -> SAFile.isFileExists(Shaft.getContext(), illust, index));
+                } else {
+                    return pageIndexStream
+                            .allMatch(index -> FileCreator.isExist(illust, index));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * 检查插画某页是否已经下载过
+     * */
+    public static boolean isIllustDownloaded(IllustsBean illust, int index) {
+        try {
+            if (illust.getPage_count() == 1) {
+                if (Shaft.sSettings.getDownloadWay() == 1) {
+                    return SAFile.isFileExists(Shaft.getContext(), illust);
+                } else {
+                    return FileCreator.isExist(illust, 0);
+                }
+            } else {
+                if (Shaft.sSettings.getDownloadWay() == 1) {
+                    return SAFile.isFileExists(Shaft.getContext(), illust, index);
+                } else {
+                    return FileCreator.isExist(illust, index);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * 根据ISO8601格式的时间字符串获取年月日时分格式的字符串
+     */
+    public static String getLocalYYYYMMDDHHMMString(String source) {
+        try {
+            return ZonedDateTime.parse(source).withZoneSameInstant(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return source.substring(0, 16);
+        }
+    }
+
+    /**
+     * 根据ISO8601格式的时间字符串获取年月日时分秒格式的字符串
+     */
+    public static String getLocalYYYYMMDDHHMMSSString(String source) {
+        try {
+            return ZonedDateTime.parse(source).withZoneSameInstant(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return source;
+        }
+    }
+
+    /**
+     * 根据ISO8601格式的时间字符串获取年月日时分秒格式的字符串（文件用）
+     */
+    public static String getLocalYYYYMMDDHHMMSSFileString(String source) {
+        try {
+            return ZonedDateTime.parse(source).withZoneSameInstant(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return source;
+        }
+    }
+
+    /**
+     * 获取小说文字颜色配置
+     */
+    public static int getNovelTextColor(){
+        int color = Shaft.sSettings.getNovelHolderTextColor();
+        if(color == 0){
+            return ContextCompat.getColor(Shaft.getContext(), R.color.white);
+        }
+        return color;
+    }
+
+    /**
+     * 文件大小是否满足反向搜索条件
+     *
+     * @param uri 文件地址
+     * @return 大小是否可搜索
+     */
+    public static boolean isFileSizeOkToReverseSearch(Uri uri, long maxImageSize) {
+        Cursor cursor = Shaft.getContext().getContentResolver().query(uri, null, null, null, null);
+        if (cursor == null) {
+            return false;
+        }
+        int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+        cursor.moveToFirst();
+        boolean ret = cursor.getLong(sizeIndex) <= maxImageSize;
+        cursor.close();
+        return ret;
+    }
+
+    /**
+     *  复制资源Uri到内部缓存，from com.blankj.utilcode.util.UriUtils
+     * @param uri
+     * @return cached file
+     */
+    public static File copyUriToImageCacheFolder(Uri uri) {
+        InputStream is = null;
+        try {
+            is = Utils.getApp().getContentResolver().openInputStream(uri);
+            File file = new File(LegacyFile.imageCacheFolder(Utils.getApp()), String.valueOf(System.currentTimeMillis()));
+            FileIOUtils.writeFileFromIS(file.getAbsolutePath(), is);
+            return file;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }

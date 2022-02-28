@@ -2,7 +2,6 @@ package ceui.lisa.activities;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
@@ -10,12 +9,13 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 
+import com.blankj.utilcode.util.BarUtils;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 import androidx.databinding.ViewDataBinding;
 import androidx.fragment.app.FragmentActivity;
-
 import ceui.lisa.R;
 import ceui.lisa.interfaces.FeedBack;
 import ceui.lisa.utils.Common;
@@ -53,12 +53,15 @@ public abstract class BaseActivity<Layout extends ViewDataBinding> extends AppCo
             }
 
             if (hideStatusBar()) {
-                getWindow().setStatusBarColor(Color.TRANSPARENT);
-                getWindow().getDecorView().setSystemUiVisibility(
-                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-                                View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+                BarUtils.transparentStatusBar(this);
+            } else {
+                getWindow().setStatusBarColor(Common.resolveThemeAttribute(mContext, R.attr.colorPrimary));
             }
-            baseBind = DataBindingUtil.setContentView(mActivity, mLayoutID);
+            try {
+                baseBind = DataBindingUtil.setContentView(mActivity, mLayoutID);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
 
             initModel();
             initView();
@@ -107,17 +110,20 @@ public abstract class BaseActivity<Layout extends ViewDataBinding> extends AppCo
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == ASK_URI) {
-            Common.showLog(className + "onActivityResult ");
             if (resultCode != RESULT_OK || data == null) {
                 return;
             }
             Uri treeUri = data.getData();
-            Shaft.sSettings.setRootPathUri(treeUri.toString());
-            mContext.getContentResolver().takePersistableUriPermission(treeUri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION |
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            Local.setSettings(Shaft.sSettings);
-            doAfterGranted();
+            if (treeUri != null) {
+                Common.showLog(className + "onActivityResult " + treeUri.toString());
+                Shaft.sSettings.setRootPathUri(treeUri.toString());
+                final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+                mContext.getContentResolver().takePersistableUriPermission(treeUri,takeFlags);
+                Common.showToast("授权成功！");
+                Local.setSettings(Shaft.sSettings);
+                doAfterGranted();
+            }
         }
     }
 

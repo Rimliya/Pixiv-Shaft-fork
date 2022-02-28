@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:zhy="http://schemas.android.com/tools">
 
     <data>
 
@@ -78,14 +79,10 @@
 
                             </ImageButton>
 
-                            <ProgressBar
-                                android:layout_width="match_parent"
-                                android:id="@+id/progress"
-                                android:layout_alignParentBottom="true"
-                                style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Horizontal"
-                                android:layout_height="wrap_content">
-
-                            </ProgressBar>
+                            <include
+                                android:id="@+id/progress_layout"
+                                android:visibility="gone"
+                                layout="@layout/item_progress" />
 
                         </RelativeLayout>
 
@@ -155,11 +152,13 @@
 
                             <org.sufficientlysecure.htmltextview.HtmlTextView
                                 android:id="@+id/description"
+                                android:textColorLink="?attr/colorPrimary"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="@dimen/twelve_dp"
                                 android:layout_marginTop="@dimen/twelve_dp"
-                                android:layout_marginEnd="@dimen/twelve_dp" />
+                                android:layout_marginEnd="@dimen/twelve_dp"
+                                android:textIsSelectable="true" />
 
                             <TextView
                                 android:id="@+id/user_id"
@@ -195,18 +194,17 @@
 
                             </TextView>
 
-                            <me.next.tagview.TagCloudView
+                            <com.zhy.view.flowlayout.TagFlowLayout
                                 android:id="@+id/illust_tag"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:layout_marginTop="4dp"
-                                android:layout_marginEnd="@dimen/eight_dp"
-                                app:tcvBackground="@drawable/btn_follow_legency"
-                                app:tcvBorder="@dimen/eight_dp"
-                                app:tcvItemBorderVertical="6dp">
+                                android:layout_marginBottom="4dp"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginEnd="8dp"
+                                zhy:max_select="-1">
 
-
-                            </me.next.tagview.TagCloudView>
+                            </com.zhy.view.flowlayout.TagFlowLayout>
 
 
                             <LinearLayout
@@ -220,9 +218,9 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="@dimen/sixteen_dp"
                                     android:layout_marginBottom="10dp"
-                                    android:drawableEnd="@drawable/ic_edit_black_24dp"
+                                    app:drawableEndCompat="@drawable/ic_edit_black_24dp"
                                     android:drawablePadding="2dp"
-                                    android:drawableTint="?attr/colorPrimary"
+                                    app:drawableTint="?attr/colorPrimary"
                                     android:textSize="12sp" />
 
                                 <TextView
@@ -231,9 +229,9 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="@dimen/eight_dp"
                                     android:layout_marginBottom="10dp"
-                                    android:drawableEnd="@drawable/ic_remove_red_eye_black_24dp"
+                                    app:drawableEndCompat="@drawable/ic_remove_red_eye_black_24dp"
                                     android:drawablePadding="2dp"
-                                    android:drawableTint="?attr/colorPrimary"
+                                    app:drawableTint="?attr/colorPrimary"
                                     android:gravity="center"
                                     android:textSize="12sp"
                                     android:textStyle="bold" />
@@ -246,9 +244,9 @@
                                     android:layout_marginStart="@dimen/eight_dp"
                                     android:layout_marginEnd="@dimen/sixteen_dp"
                                     android:layout_marginBottom="10dp"
-                                    android:drawableEnd="@drawable/ic_favorite_black_24dp"
+                                    app:drawableEndCompat="@drawable/ic_favorite_black_24dp"
                                     android:drawablePadding="2dp"
-                                    android:drawableTint="?attr/colorPrimary"
+                                    app:drawableTint="?attr/colorPrimary"
                                     android:gravity="center"
                                     android:textSize="12sp"
                                     android:textStyle="bold" />
@@ -280,8 +278,6 @@
                                 android:id="@+id/download"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_alignParentEnd="true"
-                                android:layout_alignParentBottom="true"
                                 android:layout_marginStart="@dimen/twelve_dp"
                                 android:layout_marginTop="@dimen/eight_dp"
                                 android:layout_marginEnd="@dimen/twelve_dp"
@@ -323,7 +319,6 @@
                                 android:layout_marginEnd="@dimen/twelve_dp"
                                 android:layout_marginBottom="@dimen/eight_dp"
                                 android:layout_weight="1"
-                                android:foregroundTint="@color/white"
                                 android:src="@drawable/ic_favorite_black_24dp"
                                 app:backgroundTint="?attr/colorPrimary" />
 
@@ -348,12 +343,33 @@
             android:background="@android:color/transparent"
             android:elevation="@dimen/six_dp"
             android:theme="@style/AppTheme.AppBarOverlay"
-            app:navigationIcon="@drawable/ic_baseline_arrow_back_ios_24"
+            app:navigationIcon="@drawable/ic_arrow_back_white_shadow"
             app:popupTheme="@style/AppTheme.PopupOverlay"
-            app:title=" "
+            app:title=""
             app:titleTextColor="@android:color/white">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/title"
+                android:textColor="@android:color/white"
+                android:shadowColor="@android:color/black"
+                android:shadowDx="1.5"
+                android:shadowDy="1.5"
+                android:shadowRadius="5"
+                android:textSize="18sp"
+                android:maxLines="1"
+                android:ellipsize="end"/>
         </androidx.appcompat.widget.Toolbar>
+
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:visibility="invisible"
+            android:id="@+id/progress"
+            android:layout_centerInParent="true"
+            android:layout_height="wrap_content">
+
+        </ProgressBar>
 
     </RelativeLayout>
 </layout>

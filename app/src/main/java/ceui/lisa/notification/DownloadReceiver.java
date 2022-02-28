@@ -7,12 +7,13 @@ import android.os.Bundle;
 
 import ceui.lisa.database.DownloadEntity;
 import ceui.lisa.interfaces.Callback;
+import ceui.lisa.model.Holder;
 import ceui.lisa.utils.Params;
 
 public class DownloadReceiver<T> extends BroadcastReceiver {
 
-    private Callback<T> mCallback;
-    private int type; // 0是通知FragmentDownloading, 1是通知FragmentDownloadFinish
+    private final Callback<T> mCallback;
+    private final int type; // 0是通知FragmentDownloading, 1是通知FragmentDownloadFinish
     public static final int NOTIFY_FRAGMENT_DOWNLOADING = 0;
     public static final int NOTIFY_FRAGMENT_DOWNLOAD_FINISH = 1;
 
@@ -27,9 +28,9 @@ public class DownloadReceiver<T> extends BroadcastReceiver {
             Bundle bundle = intent.getExtras();
             if (bundle != null) {
                 if (type == 0) {
-                    int index = bundle.getInt(Params.INDEX);
+                    Holder holder = (Holder) bundle.getSerializable(Params.CONTENT);
                     if (mCallback != null) {
-                        mCallback.doSomething((T) Integer.valueOf(index));
+                        mCallback.doSomething((T) holder);
                     }
                 } else if (type == 1) {
                     DownloadEntity downloadEntity = (DownloadEntity) bundle.getSerializable(Params.CONTENT);

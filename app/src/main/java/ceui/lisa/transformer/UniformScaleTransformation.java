@@ -13,8 +13,8 @@ import com.bumptech.glide.request.transition.Transition;
 
 public class UniformScaleTransformation extends ImageViewTarget<Bitmap> {
 
-    private ImageView target;
-    private boolean changeSize;
+    private final ImageView target;
+    private final boolean changeSize;
 
     public UniformScaleTransformation(ImageView target, boolean c) {
         super(target);
@@ -25,8 +25,6 @@ public class UniformScaleTransformation extends ImageViewTarget<Bitmap> {
     @Override
     public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
         super.onResourceReady(resource, transition);
-
-
         if (changeSize) {
             //获取原图的宽高
             int width = resource.getWidth();

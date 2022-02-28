@@ -6,16 +6,16 @@ import android.text.InputType;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import androidx.appcompat.widget.Toolbar;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
 import com.qmuiteam.qmui.skin.QMUISkinManager;
 import com.qmuiteam.qmui.widget.dialog.QMUIDialog;
 import com.qmuiteam.qmui.widget.dialog.QMUIDialogAction;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import androidx.appcompat.widget.Toolbar;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import ceui.lisa.R;
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.adapters.BaseAdapter;
@@ -39,6 +39,7 @@ public class FragmentSB extends NetListFragment<FragmentSelectTagBinding,
 
     private int illustID;
     private String lastClass = "";
+    private List<String> tagNames = new ArrayList<>();
 
     public static FragmentSB newInstance(int illustID) {
         Bundle args = new Bundle();
@@ -48,9 +49,19 @@ public class FragmentSB extends NetListFragment<FragmentSelectTagBinding,
         return fragment;
     }
 
+    public static FragmentSB newInstance(int illustID, String[] tagNames) {
+        Bundle args = new Bundle();
+        args.putInt(Params.ILLUST_ID, illustID);
+        args.putStringArray(Params.TAG_NAMES, tagNames);
+        FragmentSB fragment = new FragmentSB();
+        fragment.setArguments(args);
+        return fragment;
+    }
+
     @Override
     public void initBundle(Bundle bundle) {
         illustID = bundle.getInt(Params.ILLUST_ID);
+        tagNames = Arrays.asList(bundle.getStringArray(Params.TAG_NAMES));
     }
 
     @Override
@@ -70,42 +81,45 @@ public class FragmentSB extends NetListFragment<FragmentSelectTagBinding,
 
     @Override
     public BaseRepo repository() {
-        return new SelectTagRepo(illustID);
+        return new SelectTagRepo(illustID, tagNames);
     }
 
     private void submitStar() {
         List<String> tempList = new ArrayList<>();
         for (int i = 0; i < allItems.size(); i++) {
-            if (allItems.get(i).isSelected()) {
+            if (allItems.get(i).isSelectedLocalOrRemote()) {
                 tempList.add(allItems.get(i).getName());
             }
         }
 
         if (tempList.size() == 0) {
-            Retro.getAppApi().postLike(Shaft.sUserModel.getResponse().getAccess_token(), illustID,
-                    baseBind.isPrivate.isChecked() ? Params.TYPE_PRIVATE : Params.TYPE_PUBLUC)
+            boolean isPrivate = baseBind.isPrivate.isChecked();
+            String toastMsg = isPrivate ? getString(R.string.like_novel_success_private) : getString(R.string.like_novel_success_public);
+            Retro.getAppApi().postLike(Shaft.sUserModel.getAccess_token(), illustID,
+                    isPrivate ? Params.TYPE_PRIVATE : Params.TYPE_PUBLIC)
                     .subscribeOn(Schedulers.newThread())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(new ErrorCtrl<NullResponse>() {
                         @Override
                         public void next(NullResponse nullResponse) {
-                            Common.showToast("收藏成功");
+                            Common.showToast(toastMsg);
                             setFollowed();
                         }
                     });
         } else {
-
+            boolean isPrivate = baseBind.isPrivate.isChecked();
+            String toastMsg = isPrivate ? getString(R.string.like_novel_success_private) : getString(R.string.like_novel_success_public);
             String[] strings = new String[tempList.size()];
             tempList.toArray(strings);
 
-            Retro.getAppApi().postLike(Shaft.sUserModel.getResponse().getAccess_token(), illustID,
-                    baseBind.isPrivate.isChecked() ? Params.TYPE_PRIVATE : Params.TYPE_PUBLUC, strings)
+            Retro.getAppApi().postLike(Shaft.sUserModel.getAccess_token(), illustID,
+                    isPrivate ? Params.TYPE_PRIVATE : Params.TYPE_PUBLIC, strings)
                     .subscribeOn(Schedulers.newThread())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(new ErrorCtrl<NullResponse>() {
                         @Override
                         public void next(NullResponse nullResponse) {
-                            Common.showToast("收藏成功");
+                            Common.showToast(toastMsg);
                             setFollowed();
                         }
                     });
@@ -144,6 +158,18 @@ public class FragmentSB extends NetListFragment<FragmentSelectTagBinding,
         mAdapter.notifyItemInserted(0);
         mRecyclerView.scrollToPosition(0);
         mAdapter.notifyItemRangeChanged(0, allItems.size());
+    }
+
+    @Override
+    public void beforeFirstLoad(List<TagsBean> tagsBeans) {
+        super.beforeFirstLoad(tagsBeans);
+        if (Shaft.sSettings.isStarWithTagSelectAll()) {
+            for (TagsBean tagsBean : tagsBeans) {
+                if (tagNames.isEmpty() || tagNames.contains(tagsBean.getName())) {
+                    tagsBean.setSelected(true);
+                }
+            }
+        }
     }
 
     @Override
@@ -188,11 +214,44 @@ public class FragmentSB extends NetListFragment<FragmentSelectTagBinding,
     @Override
     public void initView() {
         super.initView();
+        baseBind.isPrivate.setChecked(Shaft.sSettings.isPrivateStar());
         baseBind.submitArea.setOnClickListener(v -> submitStar());
     }
+
+//    @Override
+//    public void onFirstLoaded(List<TagsBean> tagsBeans) {
+//        super.onFirstLoaded(tagsBeans);
+//        getLikedTags();
+//    }
 
     @Override
     public String getToolbarTitle() {
         return getString(R.string.string_238);
     }
+
+//    private void getLikedTags() {
+//        if (true) {
+//            return;
+//        }
+//        Retro.getAppApi().getBookmarkTags(Shaft.sUserModel.getAccess_token(),
+//                Shaft.sUserModel.getUserId(), Params.TYPE_PUBLUC)
+//                .subscribeOn(Schedulers.newThread())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe(new NullCtrl<ListTag>() {
+//                    @Override
+//                    public void success(ListTag listTag) {
+//                        if (!Common.isEmpty(listTag.getList()) && !Common.isEmpty(allItems)) {
+//                            for (TagsBean tagsBean : listTag.getList()) {
+//                                for (TagsBean allItem : allItems) {
+//                                    Common.showLog("left " + allItem.getName() + "right " + tagsBean.getName());
+//                                    allItem.setSelected(
+//                                            TextUtils.equals(allItem.getName(), tagsBean.getName())
+//                                    );
+//                                }
+//                            }
+//                            mAdapter.notifyDataSetChanged();
+//                        }
+//                    }
+//                });
+//    }
 }

@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,7 +16,6 @@ import androidx.databinding.ViewDataBinding;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 
-import java.util.Random;
 import java.util.UUID;
 
 
@@ -63,11 +61,13 @@ public abstract class BaseFragment<Layout extends ViewDataBinding> extends Fragm
             initModel();
 
             //获取屏幕方向
-            int ori = getResources().getConfiguration().orientation;
-            if (ori == Configuration.ORIENTATION_LANDSCAPE) {
-                isVertical = false;
-            } else if (ori == Configuration.ORIENTATION_PORTRAIT) {
-                isVertical = true;
+            if (getResources() != null) {
+                int ori = getResources().getConfiguration().orientation;
+                if (ori == Configuration.ORIENTATION_LANDSCAPE) {
+                    isVertical = false;
+                } else if (ori == Configuration.ORIENTATION_PORTRAIT) {
+                    isVertical = true;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -154,13 +154,5 @@ public abstract class BaseFragment<Layout extends ViewDataBinding> extends Fragm
 
     public void initModel() {
 
-    }
-
-    public View getRootView() {
-        return rootView;
-    }
-
-    public void setRootView(View rootView) {
-        this.rootView = rootView;
     }
 }

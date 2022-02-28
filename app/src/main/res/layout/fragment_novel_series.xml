@@ -17,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_below="@+id/toolbar"
-            android:background="@color/white">
+            android:background="@color/fragment_center">
 
             <androidx.coordinatorlayout.widget.CoordinatorLayout
                 android:layout_width="match_parent"
@@ -115,6 +115,14 @@
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
 
+                            <org.sufficientlysecure.htmltextview.HtmlTextView
+                                android:id="@+id/series_description"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginHorizontal="@dimen/twelve_dp"
+                                android:textSize="11sp"
+                                android:textColor="@color/rank_text_color"
+                                android:textColorLink="?attr/colorPrimary"/>
 
                             <TextView
                                 android:id="@+id/series_detail"
@@ -123,6 +131,7 @@
                                 android:layout_marginStart="@dimen/twelve_dp"
                                 android:layout_marginEnd="@dimen/twelve_dp"
                                 android:layout_marginBottom="@dimen/eight_dp"
+                                android:textColor="@color/rank_text_color"
                                 android:textSize="13sp"/>
 
                         </LinearLayout>
@@ -138,7 +147,6 @@
                     android:id="@+id/recyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@color/white"
                     android:fadeScrollbars="false"
                     app:layout_behavior="@string/appbar_scrolling_view_behavior">
 

@@ -37,7 +37,10 @@
                     android:layout_marginStart="@dimen/sixteen_dp"
                     android:drawableStart="@drawable/ic_search_grey_24dp"
                     android:paddingStart="@dimen/twelve_dp"
+                    android:paddingEnd="36dp"
+                    android:ellipsize="end"
                     android:drawablePadding="@dimen/six_dp"
+                    android:maxLines="1"
                     android:textSize="14sp"
                     android:textColor="@color/rank_text_color"
                     android:imeOptions="actionSearch"
@@ -48,7 +51,8 @@
                     android:layout_marginTop="@dimen/twelve_dp"
                     android:layout_marginBottom="@dimen/twelve_dp"
                     android:background="@drawable/search_et_bg"
-                    android:layout_height="36dp">
+                    android:layout_height="36dp"
+                    android:inputType="text">
 
 
                 </EditText>
@@ -112,7 +116,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="@dimen/sixteen_dp"
-                            android:layout_marginTop="@dimen/tweenty_four_dp"
+                            android:layout_marginTop="@dimen/twenty_four_dp"
                             android:text="@string/string_87"
                             android:textColor="@color/second_text_color"
                             android:textSize="14sp">
@@ -129,7 +133,7 @@
                             android:id="@+id/clear_history"
                             android:textColor="?attr/colorPrimary"
                             android:layout_marginEnd="@dimen/sixteen_dp"
-                            android:layout_marginTop="@dimen/tweenty_four_dp"
+                            android:layout_marginTop="@dimen/twenty_four_dp"
                             android:layout_marginBottom="@dimen/eight_dp"
                             android:layout_height="wrap_content">
 
@@ -138,19 +142,19 @@
 
                     </RelativeLayout>
 
-
-
-                    <com.zhy.view.flowlayout.TagFlowLayout
+                    <ceui.lisa.view.NestMax
                         android:layout_width="match_parent"
-                        android:layout_marginStart="@dimen/twelve_dp"
-                        android:layout_marginEnd="@dimen/four_dp"
-                        android:id="@+id/search_history"
                         android:layout_height="wrap_content">
 
+                        <com.zhy.view.flowlayout.TagFlowLayout
+                            android:layout_width="match_parent"
+                            android:layout_marginStart="@dimen/twelve_dp"
+                            android:layout_marginEnd="@dimen/four_dp"
+                            android:id="@+id/search_history"
+                            android:layout_height="wrap_content">
+                        </com.zhy.view.flowlayout.TagFlowLayout>
 
-                    </com.zhy.view.flowlayout.TagFlowLayout>
-
-
+                    </ceui.lisa.view.NestMax>
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -188,7 +192,7 @@
                 android:layout_width="match_parent"
                 android:id="@+id/hint_list"
                 android:visibility="gone"
-                android:background="@color/white"
+                android:background="@color/fragment_center"
                 android:layout_height="wrap_content">
 
             </androidx.recyclerview.widget.RecyclerView>

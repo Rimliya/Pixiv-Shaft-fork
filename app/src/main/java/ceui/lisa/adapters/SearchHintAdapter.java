@@ -8,12 +8,14 @@ import android.text.style.ForegroundColorSpan;
 import android.view.View;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ceui.lisa.R;
 import ceui.lisa.databinding.RecySearchHintBinding;
 import ceui.lisa.model.ListTrendingtag;
+import ceui.lisa.utils.Common;
 
 public class SearchHintAdapter extends BaseAdapter<ListTrendingtag.TrendTagsBean, RecySearchHintBinding> {
 
@@ -31,7 +33,7 @@ public class SearchHintAdapter extends BaseAdapter<ListTrendingtag.TrendTagsBean
 
     @Override
     public void bindData(ListTrendingtag.TrendTagsBean target, ViewHolder<RecySearchHintBinding> bindView, int position) {
-        SpannableString string = matcherSearchText(mContext.getResources().getColor(R.color.design_default_color_primary),
+        SpannableString string = matcherSearchText(Common.resolveThemeAttribute(mContext, R.attr.colorPrimary),
                 target.getName(), mKeyword);
         bindView.baseBind.titleText.setText(string);
         if (!TextUtils.isEmpty(target.getTranslated_name()) && !target.getTranslated_name().equals(target.getName())) {
@@ -45,12 +47,21 @@ public class SearchHintAdapter extends BaseAdapter<ListTrendingtag.TrendTagsBean
                 }
             });
         }
+        if (mOnItemLongClickListener != null){
+            bindView.itemView.setOnLongClickListener(new View.OnLongClickListener(){
+                @Override
+                public boolean onLongClick(View view) {
+                    mOnItemLongClickListener.onItemLongClick(view, position, 0);
+                    return true;
+                }
+            });
+        }
     }
 
     private SpannableString matcherSearchText(int color, String text, String keyword) {
         SpannableString spannableString = new SpannableString(text);
         Pattern pattern = Pattern.compile(keyword);
-        Matcher matcher = pattern.matcher(new SpannableString(text.toLowerCase()));
+        Matcher matcher = pattern.matcher(new SpannableString(text.toLowerCase(Locale.getDefault())));
         while (matcher.find()) {
             int start = matcher.start();
             int end = matcher.end();

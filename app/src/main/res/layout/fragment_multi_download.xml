@@ -23,7 +23,7 @@
             app:popupTheme="@style/AppTheme.PopupOverlay"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:navigationIcon="@drawable/ic_baseline_arrow_back_ios_24">
+            app:navigationIcon="@drawable/ic_arrow_back_white_shadow">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -41,13 +41,12 @@
             android:layout_width="match_parent"
             android:id="@+id/refreshLayout"
             android:layout_below="@+id/toolbar"
-            android:background="@color/white"
+            android:background="@color/fragment_center"
             android:layout_height="match_parent">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerView"
                 android:layout_width="match_parent"
-                android:background="@color/white"
                 android:layout_height="match_parent"
                 android:fadeScrollbars="false">
 

@@ -1,7 +1,10 @@
 package ceui.lisa.fragments;
 
 import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 
@@ -12,16 +15,25 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.scwang.smartrefresh.layout.footer.ClassicsFooter;
 import com.scwang.smartrefresh.layout.footer.FalsifyFooter;
 
+import java.util.List;
+
+import ceui.lisa.R;
 import ceui.lisa.adapters.BaseAdapter;
 import ceui.lisa.adapters.EventAdapter;
 import ceui.lisa.adapters.IAdapter;
 import ceui.lisa.adapters.NAdapter;
 import ceui.lisa.adapters.SimpleUserAdapter;
 import ceui.lisa.adapters.UAdapter;
+import ceui.lisa.adapters.UserHAdapter;
+import ceui.lisa.core.Container;
+import ceui.lisa.core.PageData;
 import ceui.lisa.core.RemoteRepo;
 import ceui.lisa.http.NullCtrl;
 import ceui.lisa.interfaces.ListShow;
+import ceui.lisa.model.ListIllust;
 import ceui.lisa.models.Starable;
+import ceui.lisa.notification.BaseReceiver;
+import ceui.lisa.notification.CallBackReceiver;
 import ceui.lisa.notification.CommonReceiver;
 import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Params;
@@ -38,12 +50,15 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
 
     protected RemoteRepo<Response> mRemoteRepo;
     protected Response mResponse;
-    protected BroadcastReceiver mReceiver = null;
+    protected BroadcastReceiver mReceiver = null, dataReceiver = null, scrollReceiver = null;
+    protected boolean isLoading = false;
 
     @Override
     public void fresh() {
         if (!mRemoteRepo.localData()) {
             emptyRela.setVisibility(View.INVISIBLE);
+            if(isLoading) return;
+            isLoading = true;
             mRemoteRepo.getFirstData(new NullCtrl<Response>() {
                 @Override
                 public void success(Response response) {
@@ -54,15 +69,21 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
                     Common.showLog("trace 111");
                     mResponse = response;
                     tryCatchResponse(mResponse);
-                    if (!Common.isEmpty(mResponse.getList())) {
+                    List<Item> mResponseList = mResponse.getList();
+                    if (!Common.isEmpty(mResponseList)) {
                         Common.showLog("trace 222 " + mAdapter.getItemCount());
-                        beforeFirstLoad(mResponse.getList());
-                        mModel.load(mResponse.getList(), true);
+                        beforeFirstLoad(mResponseList);
+                        int beforeLoadSize = getStartSize();
+                        mModel.load(mResponseList, true);
+                        if (mRemoteRepo.hasEffectiveUserFollowStatus()) {
+                            mModel.tidyAppViewModel();
+                        }
                         allItems = mModel.getContent();
-                        onFirstLoaded(mResponse.getList());
+                        int afterLoadSize = getStartSize();
+                        onFirstLoaded(mResponseList);
                         mRecyclerView.setVisibility(View.VISIBLE);
                         emptyRela.setVisibility(View.INVISIBLE);
-                        mAdapter.notifyItemRangeInserted(getStartSize(), mResponse.getList().size());
+                        mAdapter.notifyItemRangeInserted(beforeLoadSize, afterLoadSize - beforeLoadSize);
                         Common.showLog("trace 777 " + mAdapter.getItemCount() + " allItems.size():" + allItems.size() + " modelSize:" + mModel.getContent().size());
                     } else {
                         Common.showLog("trace 333");
@@ -71,6 +92,7 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
                     }
                     Common.showLog("trace 444");
                     mRemoteRepo.setNextUrl(mResponse.getNextUrl());
+                    mAdapter.setNextUrl(mResponse.getNextUrl());
                     if (!TextUtils.isEmpty(mResponse.getNextUrl())) {
                         Common.showLog("trace 555");
                         mRefreshLayout.setRefreshFooter(new ClassicsFooter(mContext));
@@ -83,6 +105,7 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
                 @Override
                 public void must(boolean isSuccess) {
                     mRefreshLayout.finishRefresh(isSuccess);
+                    isLoading = false;
                 }
 
                 @Override
@@ -108,6 +131,8 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
     @Override
     public void loadMore() {
         if (!TextUtils.isEmpty(mRemoteRepo.getNextUrl())) {
+            if(isLoading) return;
+            isLoading = true;
             mRemoteRepo.getNextData(new NullCtrl<Response>() {
                 @Override
                 public void success(Response response) {
@@ -115,14 +140,21 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
                         return;
                     }
                     mResponse = response;
-                    if (!Common.isEmpty(mResponse.getList())) {
-                        beforeNextLoad(mResponse.getList());
-                        mModel.load(mResponse.getList(), false);
+                    List<Item> mResponseList = mResponse.getList();
+                    if (!Common.isEmpty(mResponseList)) {
+                        beforeNextLoad(mResponseList);
+                        int beforeLoadSize = getStartSize();
+                        mModel.load(mResponseList, false);
+                        if (mRemoteRepo.hasEffectiveUserFollowStatus()) {
+                            mModel.tidyAppViewModel(mResponseList);
+                        }
                         allItems = mModel.getContent();
-                        onNextLoaded(mResponse.getList());
-                        mAdapter.notifyItemRangeInserted(getStartSize(), mResponse.getList().size());
+                        int afterLoadSize = getStartSize();
+                        onNextLoaded(mResponseList);
+                        mAdapter.notifyItemRangeInserted(beforeLoadSize, afterLoadSize - beforeLoadSize);
                     }
                     mRemoteRepo.setNextUrl(mResponse.getNextUrl());
+                    mAdapter.setNextUrl(mResponse.getNextUrl());
                     if (!TextUtils.isEmpty(mResponse.getNextUrl())) {
                         mRefreshLayout.setRefreshFooter(new ClassicsFooter(mContext));
                     } else {
@@ -133,13 +165,14 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
                 @Override
                 public void must(boolean isSuccess) {
                     mRefreshLayout.finishLoadMore(isSuccess);
+                    isLoading = false;
                 }
             });
         } else {
-            mRefreshLayout.finishLoadMore();
             if (mRemoteRepo.showNoDataHint()) {
-                Common.showToast("没有更多数据啦");
+                Common.showToast(getString(R.string.string_224));
             }
+            mRefreshLayout.finishLoadMore();
         }
     }
 
@@ -162,13 +195,20 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
     @CallSuper
     @Override
     public void onAdapterPrepared() {
+        mAdapter.setUuid(uuid);
         //注册本地广播
         if (mAdapter instanceof IAdapter || mAdapter instanceof EventAdapter) {
-            IntentFilter intentFilter = new IntentFilter();
-            mReceiver = new CommonReceiver((BaseAdapter<Starable, ?>) mAdapter);
-            intentFilter.addAction(Params.LIKED_ILLUST);
-            LocalBroadcastManager.getInstance(mContext).registerReceiver(mReceiver, intentFilter);
-        } else if (mAdapter instanceof UAdapter || mAdapter instanceof SimpleUserAdapter) {
+            {
+                IntentFilter intentFilter = new IntentFilter();
+                mReceiver = new CommonReceiver((BaseAdapter<Starable, ?>) mAdapter);
+                intentFilter.addAction(Params.LIKED_ILLUST);
+                LocalBroadcastManager.getInstance(mContext).registerReceiver(mReceiver, intentFilter);
+            }
+            if (mAdapter instanceof IAdapter) {
+                addPageLoadReceiver();
+                addPageScrollReceiver();
+            }
+        } else if (mAdapter instanceof UAdapter || mAdapter instanceof UserHAdapter || mAdapter instanceof SimpleUserAdapter) {
             IntentFilter intentFilter = new IntentFilter();
             mReceiver = new CommonReceiver((BaseAdapter<Starable, ?>) mAdapter);
             intentFilter.addAction(Params.LIKED_USER);
@@ -179,13 +219,98 @@ public abstract class NetListFragment<Layout extends ViewDataBinding,
             intentFilter.addAction(Params.LIKED_NOVEL);
             LocalBroadcastManager.getInstance(mContext).registerReceiver(mReceiver, intentFilter);
         }
+
+        // 预加载
+        if (mAdapter instanceof IAdapter) {
+            mAdapter.onPreload = this::loadMore;
+        }
     }
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         if (mReceiver != null) {
             LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mReceiver);
         }
+        if (dataReceiver != null) {
+            LocalBroadcastManager.getInstance(mContext).unregisterReceiver(dataReceiver);
+        }
+        if (scrollReceiver != null) {
+            LocalBroadcastManager.getInstance(mContext).unregisterReceiver(scrollReceiver);
+        }
+        super.onDestroy();
+    }
+
+    private void addPageLoadReceiver() {
+        IntentFilter intentFilter = new IntentFilter();
+        dataReceiver = new CallBackReceiver(new BaseReceiver.CallBack() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Bundle bundle = intent.getExtras();
+                if (bundle != null) {
+                    //接受VActivity传过来的ListIllust 数据
+                    final String intentUUID = intent.getStringExtra(Params.PAGE_UUID);
+                    PageData pageData = Container.get().getPage(intentUUID);
+                    if (pageData != null && TextUtils.equals(pageData.getUUID(), uuid)) {
+                        ListIllust listIllust = (ListIllust) bundle.getSerializable(Params.CONTENT);
+                        if (listIllust != null && !Common.isEmpty(listIllust.getList())) {
+                            if (!isAdded()) {
+                                return;
+                            }
+                            mResponse = (Response) listIllust;
+                            List<Item> mResponseList = mResponse.getList();
+                            if (!Common.isEmpty(mResponseList)) {
+                                beforeNextLoad(mResponseList);
+                                int beforeLoadSize = getStartSize();
+                                mModel.load(mResponseList, false);
+                                if (mRemoteRepo.hasEffectiveUserFollowStatus()) {
+                                    mModel.tidyAppViewModel(mResponseList);
+                                }
+                                allItems = mModel.getContent();
+                                int afterLoadSize = getStartSize();
+                                onNextLoaded(mResponseList);
+                                mAdapter.notifyItemRangeInserted(beforeLoadSize, afterLoadSize - beforeLoadSize);
+                            }
+                            mRemoteRepo.setNextUrl(mResponse.getNextUrl());
+                            mAdapter.setNextUrl(mResponse.getNextUrl());
+                            if (!TextUtils.isEmpty(mResponse.getNextUrl())) {
+                                mRefreshLayout.setRefreshFooter(new ClassicsFooter(mContext));
+                            } else {
+                                mRefreshLayout.setRefreshFooter(new FalsifyFooter(mContext));
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        intentFilter.addAction(Params.FRAGMENT_ADD_DATA);
+        LocalBroadcastManager.getInstance(mContext).registerReceiver(dataReceiver, intentFilter);
+    }
+
+    private void addPageScrollReceiver() {
+        IntentFilter intentFilter = new IntentFilter();
+        scrollReceiver = new CallBackReceiver(new BaseReceiver.CallBack() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Bundle bundle = intent.getExtras();
+                if (bundle != null) {
+                    int index = bundle.getInt(Params.INDEX);
+                    String pageUUID = bundle.getString(Params.PAGE_UUID);
+                    if (TextUtils.equals(pageUUID, uuid)) {
+                        try {
+                            mRecyclerView.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mRecyclerView.smoothScrollToPosition(index + mAdapter.headerSize());
+                                }
+                            }, 200L);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        });
+        intentFilter.addAction(Params.FRAGMENT_SCROLL_TO_POSITION);
+        LocalBroadcastManager.getInstance(mContext).registerReceiver(scrollReceiver, intentFilter);
     }
 }

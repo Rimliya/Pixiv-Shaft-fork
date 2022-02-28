@@ -24,14 +24,14 @@ public class RAdapter extends BaseAdapter<IllustsBean, RecyRankIllustHorizontalB
 
     @Override
     public void bindData(IllustsBean target, ViewHolder<RecyRankIllustHorizontalBinding> bindView, int position) {
-        bindView.baseBind.title.setText(allIllust.get(position).getTitle());
-        bindView.baseBind.author.setText(allIllust.get(position).getUser().getName());
-        Glide.with(mContext).load(GlideUtil.getMediumImg(allIllust.get(position)
+        bindView.baseBind.title.setText(allItems.get(position).getTitle());
+        bindView.baseBind.author.setText(allItems.get(position).getUser().getName());
+        Glide.with(mContext).load(GlideUtil.getUrl(allItems.get(position)
                 .getImage_urls().getMedium()))
                 .placeholder(R.color.light_bg).into(bindView.baseBind.illustImage);
-        Glide.with(mContext).load(GlideUtil.getMediumImg(allIllust.get(position)
+        Glide.with(mContext).load(GlideUtil.getUrl(allItems.get(position)
                 .getUser().getProfile_image_urls().getMedium()))
-                .placeholder(R.color.light_bg).into(bindView.baseBind.userHead);
+                .placeholder(R.color.light_bg).error(R.drawable.no_profile).into(bindView.baseBind.userHead);
         if (mOnItemClickListener != null) {
             bindView.itemView.setOnClickListener(v -> mOnItemClickListener.onItemClick(v, position, 0));
         }

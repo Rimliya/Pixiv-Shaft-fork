@@ -10,7 +10,6 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.blankj.utilcode.util.BarUtils;
 import com.effective.android.panel.PanelSwitchHelper;
 import com.qmuiteam.qmui.skin.QMUISkinManager;
 import com.qmuiteam.qmui.widget.dialog.QMUIDialog;
@@ -26,18 +25,21 @@ import ceui.lisa.adapters.EmojiAdapter;
 import ceui.lisa.core.RemoteRepo;
 import ceui.lisa.databinding.FragmentCommentBinding;
 import ceui.lisa.databinding.RecyCommentListBinding;
+import ceui.lisa.helper.BackHandlerHelper;
 import ceui.lisa.http.NullCtrl;
 import ceui.lisa.http.Retro;
+import ceui.lisa.interfaces.FragmentBackHandler;
 import ceui.lisa.interfaces.OnItemClickListener;
 import ceui.lisa.model.EmojiItem;
 import ceui.lisa.model.ListComment;
 import ceui.lisa.models.CommentHolder;
-import ceui.lisa.models.CommentsBean;
+import ceui.lisa.models.ReplyCommentBean;
 import ceui.lisa.repo.CommentRepo;
 import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Emoji;
 import ceui.lisa.utils.Params;
 import ceui.lisa.view.EditTextWithSelection;
+import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
@@ -45,18 +47,30 @@ import io.reactivex.schedulers.Schedulers;
 import static ceui.lisa.activities.Shaft.sUserModel;
 
 public class FragmentComment extends NetListFragment<FragmentCommentBinding,
-        ListComment, CommentsBean> {
+        ListComment, ReplyCommentBean> implements FragmentBackHandler {
 
     private String[] OPTIONS;
-    private int illustID;
+    private int workId;
+    private String dataType;
     private String title;
     private int parentCommentID;
     private PanelSwitchHelper mHelper;
     private int selection = 0;
 
-    public static FragmentComment newInstance(int id, String title) {
+    public static FragmentComment newIllustInstance(int id, String title) {
         Bundle args = new Bundle();
-        args.putInt(Params.ILLUST_ID, id);
+        args.putInt(Params.ID, id);
+        args.putString(Params.DATA_TYPE, Params.TYPE_ILLUST);
+        args.putString(Params.ILLUST_TITLE, title);
+        FragmentComment fragment = new FragmentComment();
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    public static FragmentComment newNovelInstance(int id, String title) {
+        Bundle args = new Bundle();
+        args.putInt(Params.ID, id);
+        args.putString(Params.DATA_TYPE, Params.TYPE_NOVEL);
         args.putString(Params.ILLUST_TITLE, title);
         FragmentComment fragment = new FragmentComment();
         fragment.setArguments(args);
@@ -65,7 +79,8 @@ public class FragmentComment extends NetListFragment<FragmentCommentBinding,
 
     @Override
     public void initBundle(Bundle bundle) {
-        illustID = bundle.getInt(Params.ILLUST_ID);
+        workId = bundle.getInt(Params.ID);
+        dataType = bundle.getString(Params.DATA_TYPE);
         title = bundle.getString(Params.ILLUST_TITLE);
     }
 
@@ -79,7 +94,7 @@ public class FragmentComment extends NetListFragment<FragmentCommentBinding,
         super.onStart();
         if (mHelper == null) {
             mHelper = new PanelSwitchHelper.Builder(this)
-                    .contentCanScrollOutside(false)    //可选模式，默认true，当面板实现时内容区域是否往上滑动
+                    .contentScrollOutsideEnable(false)    //可选模式，默认true，当面板实现时内容区域是否往上滑动
                     .logTrack(true)
                     //可选，默认false，是否开启log信息输出
                     .build(false);              //可选，默认false，是否默认打开输入法
@@ -88,11 +103,11 @@ public class FragmentComment extends NetListFragment<FragmentCommentBinding,
 
     @Override
     public RemoteRepo<ListComment> repository() {
-        return new CommentRepo(illustID);
+        return new CommentRepo(workId, dataType);
     }
 
     @Override
-    public BaseAdapter<CommentsBean, RecyCommentListBinding> adapter() {
+    public BaseAdapter<ReplyCommentBean, RecyCommentListBinding> adapter() {
         return new CommentAdapter(allItems, mContext).setOnItemClickListener((v, position, viewType) -> {
             if (viewType == 0) {
                 new QMUIDialog.MenuDialogBuilder(mActivity)
@@ -163,38 +178,38 @@ public class FragmentComment extends NetListFragment<FragmentCommentBinding,
     }
 
     @Override
-    public void beforeFirstLoad(List<CommentsBean> items) {
-        for (CommentsBean allItem : items) {
-            String comment = allItem.getComment();
+    public void beforeFirstLoad(List<ReplyCommentBean> items) {
+        for (ReplyCommentBean replyCommentBean : items) {
+            String comment = replyCommentBean.getComment();
             if (Emoji.hasEmoji(comment)) {
                 String newComment = Emoji.transform(comment);
-                allItem.setComment(newComment);
+                replyCommentBean.setCommentWithConvertedEmoji(newComment);
             }
 
-            if (allItem.getParent_comment() != null) {
-                String parentComment = allItem.getParent_comment().getComment();
+            if (replyCommentBean.getParent_comment() != null) {
+                String parentComment = replyCommentBean.getParent_comment().getComment();
                 if (Emoji.hasEmoji(parentComment)) {
                     String newComment = Emoji.transform(parentComment);
-                    allItem.getParent_comment().setComment(newComment);
+                    replyCommentBean.getParent_comment().setCommentWithConvertedEmoji(newComment);
                 }
             }
         }
     }
 
     @Override
-    public void beforeNextLoad(List<CommentsBean> items) {
-        for (CommentsBean allItem : items) {
+    public void beforeNextLoad(List<ReplyCommentBean> items) {
+        for (ReplyCommentBean allItem : items) {
             String comment = allItem.getComment();
             if (Emoji.hasEmoji(comment)) {
                 String newComment = Emoji.transform(comment);
-                allItem.setComment(newComment);
+                allItem.setCommentWithConvertedEmoji(newComment);
             }
 
             if (allItem.getParent_comment() != null) {
                 String parentComment = allItem.getParent_comment().getComment();
                 if (Emoji.hasEmoji(parentComment)) {
                     String newComment = Emoji.transform(parentComment);
-                    allItem.getParent_comment().setComment(newComment);
+                    allItem.getParent_comment().setCommentWithConvertedEmoji(newComment);
                 }
             }
         }
@@ -209,7 +224,7 @@ public class FragmentComment extends NetListFragment<FragmentCommentBinding,
                 getString(R.string.string_174)
         };
         baseBind.post.setOnClickListener(v -> {
-            if (!sUserModel.getResponse().getUser().isIs_mail_authorized()) {
+            if (!sUserModel.getUser().isIs_mail_authorized()) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
                 builder.setMessage(R.string.string_158);
                 builder.setPositiveButton(R.string.string_159, (dialog, which) -> {
@@ -222,10 +237,10 @@ public class FragmentComment extends NetListFragment<FragmentCommentBinding,
                 alertDialog.show();
                 alertDialog
                         .getButton(AlertDialog.BUTTON_POSITIVE)
-                        .setTextColor(android.R.attr.colorPrimary);
+                        .setTextColor(R.attr.colorPrimary);
                 alertDialog
                         .getButton(AlertDialog.BUTTON_NEGATIVE)
-                        .setTextColor(android.R.attr.colorPrimary);
+                        .setTextColor(R.attr.colorPrimary);
                 return;
             }
 
@@ -251,12 +266,13 @@ public class FragmentComment extends NetListFragment<FragmentCommentBinding,
                         emptyRela.setVisibility(View.INVISIBLE);
                     }
 
-                    if (Emoji.hasEmoji(commentHolder.getComment().getComment())) {
-                        commentHolder.getComment().setComment(
-                                Emoji.transform(commentHolder.getComment().getComment()));
-                        allItems.add(0, commentHolder.getComment());
+                    ReplyCommentBean replyCommentBean = commentHolder.getComment();
+                    if (Emoji.hasEmoji(replyCommentBean.getComment())) {
+                        replyCommentBean.setCommentWithConvertedEmoji(
+                                Emoji.transform(replyCommentBean.getComment()));
+                        allItems.add(0, replyCommentBean);
                     } else {
-                        allItems.add(0, commentHolder.getComment());
+                        allItems.add(0, replyCommentBean);
                     }
                     mAdapter.notifyItemInserted(0);
                     baseBind.recyclerView.scrollToPosition(0);
@@ -267,19 +283,10 @@ public class FragmentComment extends NetListFragment<FragmentCommentBinding,
                     baseBind.progress.setVisibility(View.GONE);
                 }
             };
-            if (parentCommentID != 0) {
-                Retro.getAppApi().postComment(sUserModel.getResponse().getAccess_token(), illustID,
-                        baseBind.inputBox.getText().toString(), parentCommentID)
-                        .subscribeOn(Schedulers.newThread())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(nullCtrl);
-            } else {
-                Retro.getAppApi().postComment(sUserModel.getResponse().getAccess_token(), illustID,
-                        baseBind.inputBox.getText().toString())
-                        .subscribeOn(Schedulers.newThread())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(nullCtrl);
-            }
+            getCommentHolder()
+                    .subscribeOn(Schedulers.newThread())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(nullCtrl);
         });
         baseBind.clear.setOnClickListener(v -> {
             if (baseBind.inputBox.getText().toString().length() != 0) {
@@ -307,7 +314,7 @@ public class FragmentComment extends NetListFragment<FragmentCommentBinding,
                     String left = show.substring(0, selection);
                     String right = show.substring(selection);
 
-                    baseBind.inputBox.setText(left + name + right);
+                    baseBind.inputBox.setText(String.format("%s%s%s", left, name, right));
                     baseBind.inputBox.setSelection(selection + name.length());
                 } else {
                     String result = show + name;
@@ -328,5 +335,27 @@ public class FragmentComment extends NetListFragment<FragmentCommentBinding,
                 }
             }
         });
+    }
+
+    @Override
+    public boolean onBackPressed() {
+        boolean childResult = BackHandlerHelper.handleBackPress(this);
+        return childResult || mHelper.hookSystemBackByPanelSwitcher();
+    }
+
+    private Observable<CommentHolder> getCommentHolder() {
+        if (dataType == Params.TYPE_ILLUST) {
+            return parentCommentID != 0 ?
+                    Retro.getAppApi().postIllustComment(sUserModel.getAccess_token(), workId,
+                            baseBind.inputBox.getText().toString(), parentCommentID) :
+                    Retro.getAppApi().postIllustComment(sUserModel.getAccess_token(), workId,
+                            baseBind.inputBox.getText().toString());
+        } else {
+            return parentCommentID != 0 ?
+                    Retro.getAppApi().postNovelComment(sUserModel.getAccess_token(), workId,
+                            baseBind.inputBox.getText().toString(), parentCommentID) :
+                    Retro.getAppApi().postNovelComment(sUserModel.getAccess_token(), workId,
+                            baseBind.inputBox.getText().toString());
+        }
     }
 }

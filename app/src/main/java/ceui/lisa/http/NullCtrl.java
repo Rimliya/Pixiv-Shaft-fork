@@ -11,12 +11,12 @@ public abstract class NullCtrl<T> extends ErrorCtrl<T> {
 
     @Override
     public void next(T t) {
-        must(true);
         if (t != null) {
             success(t);
         } else {
             nullSuccess();
         }
+        must(true);
     }
 
     @Override

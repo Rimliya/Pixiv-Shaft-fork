@@ -23,8 +23,8 @@
             <LinearLayout
                 android:id="@+id/user_follow_linear"
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
-                android:background="@android:color/white"
+                android:layout_height="wrap_content"
+                android:background="@color/light_bg"
                 android:orientation="horizontal">
 
                 <ImageView

@@ -1,11 +1,11 @@
 package ceui.lisa.http;
 
+import android.annotation.SuppressLint;
 import android.util.Log;
 
 import com.blankj.utilcode.util.DeviceUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.safframework.http.interceptor.LoggingInterceptor;
 
 import java.security.cert.X509Certificate;
 import java.util.Collections;
@@ -13,6 +13,7 @@ import java.util.Collections;
 import javax.net.ssl.X509TrustManager;
 
 import ceui.lisa.activities.Shaft;
+import ceui.lisa.helper.LanguageHelper;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Request;
@@ -23,6 +24,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 import static ceui.lisa.http.AccountApi.ACCOUNT_BASE_URL;
 import static ceui.lisa.http.AppApi.API_BASE_URL;
+import static ceui.lisa.http.ResourceApi.JSDELIVR_BASE_URL;
 import static ceui.lisa.http.SignApi.SIGN_API;
 
 public class Retro {
@@ -31,49 +33,75 @@ public class Retro {
         return get().create(AppApi.class);
     }
 
+    public static void refreshAppApi() {
+        Holder.appRetrofit = buildRetrofit(API_BASE_URL);
+    }
+
     public static SignApi getSignApi() {
         return buildRetrofit(SIGN_API).create(SignApi.class);
     }
 
     public static AccountApi getAccountApi() {
-        return buildRetrofit(ACCOUNT_BASE_URL).create(AccountApi.class);
+        return buildRetrofit(ACCOUNT_BASE_URL, false).create(AccountApi.class);
+    }
+
+    public static AccountTokenApi getAccountTokenApi(){
+        return buildRetrofit(ACCOUNT_BASE_URL).create(AccountTokenApi.class);
+    }
+
+    public static ResourceApi getResourceApi(){
+        return buildPlainRetrofit(JSDELIVR_BASE_URL).create(ResourceApi.class);
     }
 
     private static Request.Builder addHeader(Request.Builder before) {
         PixivHeaders pixivHeaders = new PixivHeaders();
         String osVersion = DeviceUtils.getSDKVersionName();
         String phoneName = DeviceUtils.getModel();
-        before.addHeader("User-Agent", "PixivAndroidApp/5.0.175 (Android " + osVersion + "; " + phoneName + ")")
-                .addHeader("accept-language", "zh-cn")
-                .addHeader(":authority", "app-api.pixiv.net")
+        before.addHeader("User-Agent", "PixivAndroidApp/5.0.234 (Android " + osVersion + "; " + phoneName + ")")
+                .addHeader("accept-language", LanguageHelper.getRequestHeaderAcceptLanguageFromAppLanguage())
                 .addHeader("x-client-time", pixivHeaders.getXClientTime())
                 .addHeader("x-client-hash", pixivHeaders.getXClientHash());
+        return before;
+    }
 
+    private static OkHttpClient.Builder fuckChinaWithConfig(OkHttpClient.Builder before, boolean enable) {
+        if(enable && Shaft.sSettings.isAutoFuckChina()){
+            before.sslSocketFactory(new RubySSLSocketFactory(), new pixivOkHttpClient());
+            before.dns(HttpDns.getInstance());
+        }
         return before;
     }
 
     private static Retrofit buildRetrofit(String baseUrl) {
+        return buildRetrofit(baseUrl, true);
+    }
+
+    private static Retrofit buildRetrofit(String baseUrl, boolean autoFuckChina) {
         OkHttpClient.Builder builder = getLogClient();
         try {
             builder.addInterceptor(chain ->
                     chain.proceed(addHeader(chain.request().newBuilder()).build()));
-            if (!baseUrl.equals(ACCOUNT_BASE_URL)) {
-                builder.addInterceptor(new TokenInterceptor());
-            }
+            builder.addInterceptor(new TokenInterceptor());
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if (Shaft.sSettings.isAutoFuckChina()) {
-            builder.sslSocketFactory(new RubySSLSocketFactory(), new pixivOkHttpClient());
-            //builder.dns(new CloudFlareDns(CloudFlareDNSService.Companion.invoke()));
-            builder.dns(HttpDns.getInstance());
-        }
+        fuckChinaWithConfig(builder, autoFuckChina);
         OkHttpClient client = builder.build();
         Gson gson = new GsonBuilder().setLenient().create();
         return new Retrofit.Builder()
                 .client(client)
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .addConverterFactory(GsonConverterFactory.create(gson))
+                .baseUrl(baseUrl)
+                .build();
+    }
+
+    private static Retrofit buildPlainRetrofit(String baseUrl){
+        OkHttpClient.Builder builder = getLogClient();
+        OkHttpClient client = builder.build();
+        return new Retrofit.Builder()
+                .client(client)
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .baseUrl(baseUrl)
                 .build();
     }
@@ -98,6 +126,7 @@ public class Retro {
         return retrofit.create(service);
     }
 
+    @SuppressLint("CustomX509TrustManager")
     static class pixivOkHttpClient implements X509TrustManager {
         public void checkClientTrusted(X509Certificate[] param1ArrayOfX509Certificate, String param1String) {
         }
@@ -123,18 +152,8 @@ public class Retro {
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(
                 message -> Log.i("RetroLog", message));
         loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-        return new OkHttpClient
-                .Builder()
-                .addInterceptor(
-//                        new LoggingInterceptor.Builder()
-//                                .loggable(true)
-//                                .request()
-//                                .requestTag("Request")
-//                                .response()
-//                                .responseTag("Response")
-//                                .build()
-                        loggingInterceptor
-                )
+        return new OkHttpClient.Builder()
+                .addInterceptor(loggingInterceptor)
                 .protocols(Collections.singletonList(Protocol.HTTP_1_1));
     }
 }

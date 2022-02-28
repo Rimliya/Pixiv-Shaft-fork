@@ -1,4 +1,8 @@
 # Shaft (Pixiv 第三方客户端)
+[![release](https://img.shields.io/github/v/release/CeuiLiSA/Pixiv-Shaft)](https://github.com/CeuiLiSA/Pixiv-Shaft/releases/latest)
+[![build status](https://img.shields.io/github/workflow/status/CeuiLiSA/Pixiv-Shaft/CI)](https://github.com/CeuiLiSA/Pixiv-Shaft/actions)
+[![open issues](https://img.shields.io/github/issues/CeuiLiSA/Pixiv-Shaft?color=brightgreen)](https://github.com/CeuiLiSA/Pixiv-Shaft/issues?q=is%3Aopen+is%3Aissue)
+[![license](https://img.shields.io/github/license/CeuiLiSA/Pixiv-Shaft)](https://github.com/CeuiLiSA/Pixiv-Shaft/blob/master/LICENSE)
 
 * 本应用为日本插画交流网站Pixiv的安卓客户端第三方重制版
 * 项目已开源且仅做交流和学习使用，不得用于任何商业用途
@@ -20,6 +24,8 @@
 * 新增小说功能
 * Pixiv特辑
 * R18显示（需自行到官网开启）
+* 过滤垃圾评论 （设定自行开启）
+* 支持黑暗模式
 
 ## 2.特性
 * 美观大方的界面，融合多家客户端设计优点
@@ -41,7 +47,7 @@
 |:---:|:---:|:---:|
 |![](https://github.com/CeuiLiSA/Pixiv-Shaft/blob/master/snap/QQ20200106-3.jpg)|![](https://github.com/CeuiLiSA/Pixiv-Shaft/blob/master/snap/QQ20200106-4.jpg)|![](https://github.com/CeuiLiSA/Pixiv-Shaft/blob/master/snap/QQ20200106-5.jpg)
 
-## 4.在Google Play上获取
+## 4.在 Google Play 上获取
 
 <a href="https://play.google.com/store/apps/details?id=ceui.lisa.pixiv">
     <img
@@ -52,6 +58,14 @@
     />
 </a>
 
+## 5.在 Github 上获取
+
+[Releases](https://github.com/CeuiLiSA/Pixiv-Shaft/releases/latest)
+
+## 6.常见问题 FAQ
+
+[FAQ](./FAQ.md)
+
 
 ### 开源许可
 
@@ -60,7 +74,7 @@ This project is under the MIT License. See the [LICENSE](LICENSE) file for the f
 ```text
 MIT License
 
-Copyright (c) 2020 CeuiLiSA
+Copyright (c) 2021 CeuiLiSA
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -80,5 +94,4 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
-
 

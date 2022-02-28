@@ -15,9 +15,8 @@ import ceui.lisa.utils.Common
 import com.scwang.smartrefresh.layout.SmartRefreshLayout
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
-import java.lang.Exception
 
-class FragmentWorkSpace: SwipeFragment<FragmentWorkSpaceBinding>(), Display<UserDetailResponse> {
+class FragmentWorkSpace : SwipeFragment<FragmentWorkSpaceBinding>(), Display<UserDetailResponse> {
 
     override fun initLayout() {
         mLayoutID = R.layout.fragment_work_space
@@ -28,18 +27,19 @@ class FragmentWorkSpace: SwipeFragment<FragmentWorkSpaceBinding>(), Display<User
     }
 
     public override fun initData() {
-        Retro.getAppApi().getUserDetail(Shaft.sUserModel.response.access_token, Shaft.sUserModel.userId)
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(object : NullCtrl<UserDetailResponse>() {
-                    override fun success(user: UserDetailResponse) {
-                        invoke(user)
-                    }
+        Retro.getAppApi()
+            .getUserDetail(Shaft.sUserModel.access_token, Shaft.sUserModel.userId)
+            .subscribeOn(Schedulers.newThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(object : NullCtrl<UserDetailResponse>() {
+                override fun success(user: UserDetailResponse) {
+                    invoke(user)
+                }
 
-                    override fun must(isSuccess: Boolean) {
-                        baseBind.progress.visibility = View.INVISIBLE
-                    }
-                })
+                override fun must(isSuccess: Boolean) {
+                    baseBind.progress.visibility = View.INVISIBLE
+                }
+            })
     }
 
     override fun invoke(response: UserDetailResponse) {
@@ -104,20 +104,19 @@ class FragmentWorkSpace: SwipeFragment<FragmentWorkSpaceBinding>(), Display<User
             map["chair"] = Common.checkEmpty(baseBind.chair)
             map["comment"] = Common.checkEmpty(baseBind.otherText)
 
-            Retro.getAppApi().editWorkSpace(Shaft.sUserModel.response.access_token, map)
-                    .subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(object : NullCtrl<NullResponse>() {
-                        override fun success(accountEditResponse: NullResponse) {
-                            Common.showToast("修改成功！", true)
-                            mActivity.finish()
-                        }
+            Retro.getAppApi().editWorkSpace(Shaft.sUserModel.access_token, map)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(object : NullCtrl<NullResponse>() {
+                    override fun success(accountEditResponse: NullResponse) {
+                        Common.showToast("修改成功！", true)
+                        mActivity.finish()
+                    }
 
-                        override fun must(isSuccess: Boolean) {
-                            baseBind.progress.visibility = View.INVISIBLE
-                        }
-                    })
+                    override fun must(isSuccess: Boolean) {
+                        baseBind.progress.visibility = View.INVISIBLE
+                    }
+                })
         }
     }
-
 }

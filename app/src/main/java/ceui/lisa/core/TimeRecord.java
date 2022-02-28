@@ -17,10 +17,11 @@ public class TimeRecord {
         endTime = 0L;
         Common.showLog("TimeRecord end " + System.nanoTime());
         endTime = System.nanoTime();
+        result();
     }
 
     public static void result() {
         final long temp = endTime - startTime;
-        Common.showLog("TimeRecord result 毫秒：" + temp/1000000L);
+        Common.showLog("ScrollReceiver广播 TimeRecord result 毫秒：" + temp/1000000L);
     }
 }

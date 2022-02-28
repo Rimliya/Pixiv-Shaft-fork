@@ -15,7 +15,7 @@ import ceui.lisa.utils.GlideUtil;
 //特辑
 public class ArticleAdapter extends BaseAdapter<SpotlightArticlesBean, RecyArticalBinding> {
 
-    private int imageSize;
+    private final int imageSize;
 
     public ArticleAdapter(List<SpotlightArticlesBean> targetList, Context context) {
         super(targetList, context);
@@ -36,7 +36,7 @@ public class ArticleAdapter extends BaseAdapter<SpotlightArticlesBean, RecyArtic
         bindView.baseBind.illustImage.setLayoutParams(params);
         bindView.baseBind.title.setText(target.getTitle());
 
-        Glide.with(mContext).load(GlideUtil.getMediumImg(target.getThumbnail()))
+        Glide.with(mContext).load(GlideUtil.getUrl(target.getThumbnail()))
                 .into(bindView.baseBind.illustImage);
         if (mOnItemClickListener != null) {
             bindView.itemView.setOnClickListener(v ->

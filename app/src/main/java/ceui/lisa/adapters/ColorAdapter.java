@@ -1,26 +1,21 @@
 package ceui.lisa.adapters;
 
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Color;
 import android.view.View;
 
-import androidx.annotation.Nullable;
-
-import com.blankj.utilcode.util.Utils;
-
 import java.util.List;
 
+import androidx.annotation.Nullable;
 import ceui.lisa.R;
-import ceui.lisa.activities.MainActivity;
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.databinding.RecyColorBinding;
 import ceui.lisa.interfaces.OnItemClickListener;
 import ceui.lisa.model.ColorItem;
 import ceui.lisa.utils.Common;
-import ceui.lisa.utils.Dev;
 import ceui.lisa.utils.Local;
+
+import static com.blankj.utilcode.util.StringUtils.getString;
 
 public class ColorAdapter extends BaseAdapter<ColorItem, RecyColorBinding> {
 
@@ -38,7 +33,7 @@ public class ColorAdapter extends BaseAdapter<ColorItem, RecyColorBinding> {
     public void bindData(ColorItem target, ViewHolder<RecyColorBinding> bindView, int position) {
         bindView.baseBind.card.setCardBackgroundColor(Color.parseColor(target.getColor()));
         if (target.isSelect()) {
-            bindView.baseBind.name.setText(target.getName() + "（正在使用）");
+            bindView.baseBind.name.setText(String.format("%s（正在使用）", target.getName()));
         } else {
             bindView.baseBind.name.setText(target.getName());
         }
@@ -55,24 +50,14 @@ public class ColorAdapter extends BaseAdapter<ColorItem, RecyColorBinding> {
         setOnItemClickListener(new OnItemClickListener() {
             @Override
             public void onItemClick(View v, int position, int viewType) {
-                if (Dev.isDev) {
-                    return;
-                }
-
                 if (position == Shaft.sSettings.getThemeIndex()) {
                     return;
                 }
 
                 Shaft.sSettings.setThemeIndex(position);
                 Local.setSettings(Shaft.sSettings);
-
-                Intent intent = new Intent();
-                String realActivityClassName = MainActivity.class.getName();
-                intent.setComponent(new ComponentName(Utils.getApp(), realActivityClassName));
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                Utils.getApp().startActivity(intent);
-
-                Common.showToast("设置成功", 2);
+                Common.restart();
+                Common.showToast(getString(R.string.string_428), 2);
             }
         });
     }

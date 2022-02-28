@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package ceui.lisa.fragments
 
 import androidx.fragment.app.Fragment
@@ -6,10 +8,11 @@ import androidx.lifecycle.ViewModelProvider
 import ceui.lisa.R
 import ceui.lisa.activities.Shaft
 import ceui.lisa.databinding.FragmentHolderBinding
+import ceui.lisa.utils.MyOnTabSelectedListener
 import ceui.lisa.utils.Params
 import ceui.lisa.viewmodel.UserViewModel
 
-class FragmentHolder: BaseFragment<FragmentHolderBinding>() {
+class FragmentHolder : BaseFragment<FragmentHolderBinding>() {
 
     private lateinit var mUserViewModel: UserViewModel
 
@@ -31,23 +34,35 @@ class FragmentHolder: BaseFragment<FragmentHolderBinding>() {
     override fun initView() {
         val data = mUserViewModel.user.value ?: return
 
+        val titles: Array<String>
+        val items: Array<Fragment>
 
-        var TITLES: Array<String>
-
-        if (data.userId == Shaft.sUserModel.response.user.id) {
-            TITLES = arrayOf("收藏", "其他")
-        } else {
-            TITLES = arrayOf("插画", "其他")
+        when {
+            data.userId == Shaft.sUserModel.user.id -> {
+                titles = arrayOf("收藏", "其他")
+                items = arrayOf<Fragment>(
+                        FragmentLikeIllust.newInstance(data.userId, Params.TYPE_PUBLIC),
+                        FragmentUserRight()
+                )
+            }
+            data.profile.total_manga > 0 -> {
+                titles = arrayOf("插画", "漫画", "其他")
+                items = arrayOf<Fragment>(
+                        FragmentUserIllust.newInstance(data.userId, false),
+                        FragmentUserManga.newInstance(data.userId, false),
+                        FragmentUserRight()
+                )
+            }
+            else -> {
+                titles = arrayOf("插画", "其他")
+                items = arrayOf<Fragment>(
+                        FragmentUserIllust.newInstance(data.userId, false),
+                        FragmentUserRight()
+                )
+            }
         }
 
-        val items = arrayOf<Fragment>(
-                if (data.userId == Shaft.sUserModel.response.user.id) {
-                    FragmentLikeIllust.newInstance(data.userId, Params.TYPE_PUBLUC)
-                } else {
-                    FragmentUserIllust.newInstance(data.userId, false)
-                } ,
-                FragmentUserRight()
-        )
+        @Suppress("DEPRECATION")
         baseBind.viewPager.adapter = object : FragmentPagerAdapter(childFragmentManager) {
 
             override fun getItem(position: Int): Fragment {
@@ -55,13 +70,15 @@ class FragmentHolder: BaseFragment<FragmentHolderBinding>() {
             }
 
             override fun getCount(): Int {
-                return TITLES.size
+                return titles.size
             }
 
-            override fun getPageTitle(position: Int): CharSequence? {
-                return TITLES[position]
+            override fun getPageTitle(position: Int): CharSequence {
+                return titles[position]
             }
         }
         baseBind.tabLayout.setupWithViewPager(baseBind.viewPager)
+        val listener = MyOnTabSelectedListener(items)
+        baseBind.tabLayout.addOnTabSelectedListener(listener)
     }
 }

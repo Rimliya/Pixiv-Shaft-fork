@@ -1,22 +1,17 @@
 package ceui.lisa.viewmodel;
 
-import android.content.Context;
-
-import androidx.lifecycle.ViewModel;
-
-import com.scwang.smartrefresh.layout.api.RefreshFooter;
-import com.scwang.smartrefresh.layout.api.RefreshHeader;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.lifecycle.ViewModel;
 import ceui.lisa.core.BaseRepo;
+import ceui.lisa.helper.AppLevelViewModelHelper;
 import ceui.lisa.utils.Common;
 
 
 public class BaseModel<T> extends ViewModel{
 
-    private List<T> content = null;
+    List<T> content = null;
     private boolean isLoaded = false;
     private BaseRepo mBaseRepo;
 
@@ -39,6 +34,10 @@ public class BaseModel<T> extends ViewModel{
         isLoaded = true;
     }
 
+    public void load(List<T> list, int index) {
+        content.addAll(index, list);
+    }
+
     public boolean isLoaded() {
         return isLoaded;
     }
@@ -49,5 +48,17 @@ public class BaseModel<T> extends ViewModel{
 
     public void setBaseRepo(BaseRepo baseRepo) {
         mBaseRepo = baseRepo;
+    }
+
+    public void tidyAppViewModel(){
+        tidyAppViewModel(content);
+    }
+
+    public void tidyAppViewModel(List<T> list) {
+        extracted(list);
+    }
+
+    private void extracted(List<T> list) {
+        AppLevelViewModelHelper.fill(list);
     }
 }

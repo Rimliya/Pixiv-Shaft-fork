@@ -3,8 +3,8 @@ package ceui.lisa.http
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.text.SimpleDateFormat
-import java.util.*
-
+import java.util.Date
+import java.util.Locale
 
 /**
  * @author Aragaki
@@ -13,15 +13,15 @@ import java.util.*
  */
 class PixivHeaders {
 
-    var XClientTime: String
-    var XClientHash: String
+    var xClientTime: String
+    var xClientHash: String
 
     init {
         val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.US)
-        XClientTime = format.format(Date())
+        xClientTime = format.format(Date())
 
-        val str = "${XClientTime}28c1fdd170a5204386cb1313c7077b34f83e4aaf4aa829ce78c231e05b0bae2c"
-        XClientHash = md5(str)
+        val str = "${xClientTime}28c1fdd170a5204386cb1313c7077b34f83e4aaf4aa829ce78c231e05b0bae2c"
+        xClientHash = md5(str)
     }
 
     fun md5(plainText: String): String {
@@ -41,19 +41,13 @@ class PixivHeaders {
                     buf.append("0")
                 buf.append(Integer.toHexString(i))
             }
-            //32位加密
+            // 32位加密
             return buf.toString()
             // 16位的加密
-            //return buf.toString().substring(8, 24);
+            // return buf.toString().substring(8, 24);
         } catch (e: NoSuchAlgorithmException) {
             e.printStackTrace()
             return ""
         }
     }
 }
-
-
-
-
-
-

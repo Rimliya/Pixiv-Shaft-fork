@@ -1,6 +1,7 @@
 package ceui.lisa.activities;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.KeyEvent;
@@ -9,8 +10,10 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
-import com.blankj.utilcode.util.BarUtils;
 import com.jaredrummler.android.colorpicker.ColorPickerDialogListener;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import ceui.lisa.R;
 import ceui.lisa.databinding.ActivityFragmentBinding;
@@ -37,8 +40,8 @@ import ceui.lisa.fragments.FragmentLocalUsers;
 import ceui.lisa.fragments.FragmentLogin;
 import ceui.lisa.fragments.FragmentMangaSeries;
 import ceui.lisa.fragments.FragmentMangaSeriesDetail;
-import ceui.lisa.fragments.FragmentMultiDownld;
-import ceui.lisa.fragments.FragmentMutedTags;
+import ceui.lisa.fragments.FragmentMarkdown;
+import ceui.lisa.fragments.FragmentMultiDownload;
 import ceui.lisa.fragments.FragmentNew;
 import ceui.lisa.fragments.FragmentNewNovel;
 import ceui.lisa.fragments.FragmentNewNovels;
@@ -51,6 +54,8 @@ import ceui.lisa.fragments.FragmentPv;
 import ceui.lisa.fragments.FragmentRecmdIllust;
 import ceui.lisa.fragments.FragmentRecmdUser;
 import ceui.lisa.fragments.FragmentRelatedIllust;
+import ceui.lisa.fragments.FragmentRelatedUser;
+import ceui.lisa.fragments.FragmentSAF;
 import ceui.lisa.fragments.FragmentSB;
 import ceui.lisa.fragments.FragmentSearch;
 import ceui.lisa.fragments.FragmentSearchUser;
@@ -60,13 +65,15 @@ import ceui.lisa.fragments.FragmentUserIllust;
 import ceui.lisa.fragments.FragmentUserInfo;
 import ceui.lisa.fragments.FragmentUserManga;
 import ceui.lisa.fragments.FragmentUserNovel;
+import ceui.lisa.fragments.FragmentViewPager;
 import ceui.lisa.fragments.FragmentWalkThrough;
 import ceui.lisa.fragments.FragmentWebView;
 import ceui.lisa.fragments.FragmentWhoFollowThisUser;
 import ceui.lisa.fragments.FragmentWorkSpace;
-import ceui.lisa.fragments.TestFragment;
+import ceui.lisa.helper.BackHandlerHelper;
 import ceui.lisa.models.IllustsBean;
 import ceui.lisa.models.NovelBean;
+import ceui.lisa.models.UserPreviewsBean;
 import ceui.lisa.utils.Local;
 import ceui.lisa.utils.Params;
 import ceui.lisa.utils.ReverseResult;
@@ -99,12 +106,19 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
                 case "网页链接": {
                     String url = intent.getStringExtra(Params.URL);
                     String title = intent.getStringExtra(Params.TITLE);
-                    return FragmentWebView.newInstance(title, url);
+                    boolean preferPreserve = intent.getBooleanExtra(Params.PREFER_PRESERVE, false);
+                    return FragmentWebView.newInstance(title, url, preferPreserve);
                 }
                 case "设置":
                     return new FragmentSettings();
                 case "推荐用户":
-                    return new FragmentRecmdUser();
+                    Bundle bundleExtra = intent.getBundleExtra(Params.USER_MODEL);
+                    if (bundleExtra == null) {
+                        return new FragmentRecmdUser();
+                    }
+                    List<UserPreviewsBean> userPreviewsBeans = (ArrayList<UserPreviewsBean>) bundleExtra.getSerializable(Params.USER_MODEL);
+                    String nextUrl = intent.getStringExtra(Params.URL);
+                    return new FragmentRecmdUser(userPreviewsBeans, nextUrl);
                 case "特辑":
                     return new FragmentPv();
                 case "搜索用户": {
@@ -112,33 +126,38 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
                     return FragmentSearchUser.newInstance(keyword);
                 }
                 case "以图搜图":
-                    ReverseResult result = intent.getParcelableExtra("result");
-                    return FragmentWebView.newInstance(result.getTitle(), result.getUrl(), result.getResponseBody(), result.getMime(), result.getEncoding(), result.getHistory_url());
+                    ReverseResult result = intent.getParcelableExtra(Params.REVERSE_SEARCH_RESULT);
+                    Uri imageUri = intent.getParcelableExtra(Params.REVERSE_SEARCH_IMAGE_URI);
+                    return FragmentWebView.newInstance(result.getTitle(), result.getUrl(), result.getResponseBody(), result.getMime(), result.getEncoding(), result.getHistory_url(), imageUri);
                 case "相关评论": {
-                    BarUtils.setStatusBarColor(mActivity, android.R.attr.colorPrimary);
-                    int id = intent.getIntExtra(Params.ILLUST_ID, 0);
                     String title = intent.getStringExtra(Params.ILLUST_TITLE);
-                    return FragmentComment.newInstance(id, title);
+                    int workId = intent.getIntExtra(Params.ILLUST_ID, 0);
+                    if(workId == 0){
+                        workId = intent.getIntExtra(Params.NOVEL_ID, 0);
+                        return FragmentComment.newNovelInstance(workId, title);
+                    }
+                    return FragmentComment.newIllustInstance(workId, title);
                 }
                 case "账号管理":
                     return new FragmentLocalUsers();
                 case "按标签筛选": {
-                    return FragmentBookedTag.newInstance(intent.getStringExtra(EXTRA_KEYWORD));
+                    return FragmentBookedTag.newInstance(intent.getIntExtra(Params.DATA_TYPE, 0), intent.getStringExtra(EXTRA_KEYWORD));
                 }
                 case "按标签收藏": {
                     int id = intent.getIntExtra(Params.ILLUST_ID, 0);
-                    return FragmentSB.newInstance(id);
+                    String[] tagNames = intent.getStringArrayExtra(Params.TAG_NAMES);
+                    return FragmentSB.newInstance(id, tagNames);
                 }
                 case "关于软件":
                     return new FragmentAboutApp();
                 case "批量下载":
-                    return new FragmentMultiDownld();
+                    return new FragmentMultiDownload();
                 case "画廊":
                     return new FragmentWalkThrough();
                 case "正在关注":
                     return FragmentFollowUser.newInstance(
                             getIntent().getIntExtra(Params.USER_ID, 0),
-                            Params.TYPE_PUBLUC, true);
+                            Params.TYPE_PUBLIC, true);
                 case "好P友":
                     return new FragmentNiceFriend();
                 case "搜索":
@@ -161,7 +180,7 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
                             true);
                 case "插画/漫画收藏":
                     return FragmentLikeIllust.newInstance(intent.getIntExtra(Params.USER_ID, 0),
-                            Params.TYPE_PUBLUC, true);
+                            Params.TYPE_PUBLIC, true);
                 case "下载管理":
                     return new FragmentDownload();
                 case "推荐漫画":
@@ -172,7 +191,7 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
                     return new FragmentNewNovel();
                 case "小说收藏":
                     return FragmentLikeNovel.newInstance(intent.getIntExtra(Params.USER_ID, 0),
-                            Params.TYPE_PUBLUC, true);
+                            Params.TYPE_PUBLIC, true);
                 case "小说作品":
                     return FragmentUserNovel.newInstance(intent.getIntExtra(Params.USER_ID, 0));
                 case "小说详情":
@@ -186,7 +205,7 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
                 case "热门直播":
                     return new FragmentLive();
                 case "标签屏蔽记录":
-                    return new FragmentMutedTags();
+                    return FragmentViewPager.newInstance(Params.VIEW_PAGER_MUTED);
                 case "修改命名方式":
                     return FragmentFileName.newInstance();
                 case "捐赠":
@@ -196,7 +215,7 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
                 case "漫画系列作品":
                     return FragmentMangaSeries.newInstance(intent.getIntExtra(Params.USER_ID, 0));
                 case "漫画系列详情":
-                    return FragmentMangaSeriesDetail.newInstance(intent.getIntExtra(Params.ID, 0));
+                    return FragmentMangaSeriesDetail.newInstance(intent.getIntExtra(Params.MANGA_SERIES_ID, 0));
                 case "小说系列作品":
                     return new FragmentNovelSeries();
                 case "精华列":
@@ -216,7 +235,12 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
                 case "主题颜色":
                     return new FragmentColors();
                 case "测试测试":
-                    return new TestFragment();
+                    return new FragmentSAF();
+                case "相关用户":
+                    return FragmentRelatedUser.newInstance(intent.getIntExtra(Params.USER_ID, 0));
+                case "Markdown":
+                    String url = intent.getStringExtra(Params.URL);
+                    return FragmentMarkdown.newInstance(url);
                 default:
                     return new Fragment();
             }
@@ -279,8 +303,14 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
     @Override
     public void onColorSelected(int dialogId, int color) {
         if (childFragment instanceof FragmentNovelHolder) {
-            ((FragmentNovelHolder) childFragment).setColor(color);
-            Shaft.sSettings.setNovelHolderColor(color);
+            if (dialogId == Params.DIALOG_NOVEL_BG_COLOR) {
+                Shaft.sSettings.setNovelHolderColor(color);
+                ((FragmentNovelHolder) childFragment).setBackgroundColor(color);
+            } else if (dialogId == Params.DIALOG_NOVEL_TEXT_COLOR) {
+                Shaft.sSettings.setNovelHolderTextColor(color);
+                ((FragmentNovelHolder) childFragment).setTextColor(color);
+            }
+
             Local.setSettings(Shaft.sSettings);
         }
     }
@@ -288,5 +318,12 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
     @Override
     public void onDialogDismissed(int dialogId) {
 
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!BackHandlerHelper.handleBackPress(this)) {
+            super.onBackPressed();
+        }
     }
 }

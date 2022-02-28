@@ -16,11 +16,10 @@ import ceui.lisa.core.Manager;
 import ceui.lisa.databinding.FragmentBaseListBinding;
 import ceui.lisa.databinding.RecyDownloadTaskBinding;
 import ceui.lisa.interfaces.Callback;
-import ceui.lisa.models.IllustsBean;
+import ceui.lisa.model.Holder;
 import ceui.lisa.notification.DownloadReceiver;
 import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Params;
-import rxhttp.wrapper.entity.Progress;
 
 public class FragmentDownloading extends LocalListFragment<FragmentBaseListBinding, DownloadItem> {
 
@@ -55,16 +54,23 @@ public class FragmentDownloading extends LocalListFragment<FragmentBaseListBindi
     public void onAdapterPrepared() {
         super.onAdapterPrepared();
         IntentFilter intentFilter = new IntentFilter();
-        mReceiver = new DownloadReceiver<>((Callback<Integer>) entity -> {
-            int position = entity;
-            if (position < allItems.size()) {
-                allItems.remove(position);
-                mAdapter.notifyItemRemoved(position);
-                mAdapter.notifyItemRangeChanged(position, allItems.size() - position);
-            }
+        mReceiver = new DownloadReceiver<>((Callback<Holder>) holder -> {
+            if (holder.getCode() == Params.DOWNLOAD_FAILED) {
+                final DownloadItem item = holder.getDownloadItem();
+                item.setState(DownloadItem.DownloadState.FAILED);
+                mAdapter.notifyItemChanged(holder.getIndex());
+                Common.showLog("收到了失败提醒");
+            } else if(holder.getCode() == Params.DOWNLOAD_SUCCESS) {
+                int position = holder.getIndex();
+                if (position < allItems.size()) {
+                    allItems.remove(position);
+                    mAdapter.notifyItemRemoved(position);
+                    mAdapter.notifyItemRangeChanged(position, allItems.size() - position);
+                }
 
-            if (allItems.size() == 0) {
-                emptyRela.setVisibility(View.VISIBLE);
+                if (allItems.size() == 0) {
+                    emptyRela.setVisibility(View.VISIBLE);
+                }
             }
         }, DownloadReceiver.NOTIFY_FRAGMENT_DOWNLOADING);
         intentFilter.addAction(Params.DOWNLOAD_ING);
@@ -77,6 +83,6 @@ public class FragmentDownloading extends LocalListFragment<FragmentBaseListBindi
         if (mReceiver != null) {
             LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mReceiver);
         }
-        Manager.get().setCallback(null);
+        Manager.get().clearCallback();
     }
 }

@@ -7,21 +7,21 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
-import com.ToxicBakery.viewpager.transforms.CubeOutTransformer;
-import com.blankj.utilcode.util.BarUtils;
-import com.blankj.utilcode.util.ColorUtils;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import ceui.lisa.R;
 import ceui.lisa.databinding.ActivityImageDetailBinding;
 import ceui.lisa.download.IllustDownload;
 import ceui.lisa.fragments.FragmentImageDetail;
 import ceui.lisa.fragments.FragmentLocalImageDetail;
+import ceui.lisa.helper.PageTransformerHelper;
 import ceui.lisa.models.IllustsBean;
+import ceui.lisa.utils.Common;
+import ceui.lisa.utils.PixivOperate;
 
 /**
  * 图片二级详情
@@ -35,17 +35,14 @@ public class ImageDetailActivity extends BaseActivity<ActivityImageDetailBinding
 
     @Override
     protected int initLayout() {
-        BarUtils.setStatusBarColor(this, ColorUtils.getColor(R.color.qmui_config_color_transparent));
-        if (BarUtils.isSupportNavBar()) {
-            BarUtils.setNavBarVisibility(this, false);
-        }
+        refreshSystemUiVisibility();
         return R.layout.activity_image_detail;
     }
 
     @Override
     protected void initView() {
         String dataType = getIntent().getStringExtra("dataType");
-        baseBind.viewPager.setPageTransformer(true, new CubeOutTransformer());
+        baseBind.viewPager.setPageTransformer(true, PageTransformerHelper.getCurrentTransformer());
         if ("二级详情".equals(dataType)) {
             currentSize = findViewById(R.id.current_size);
             currentPage = findViewById(R.id.current_page);
@@ -67,10 +64,14 @@ public class ImageDetailActivity extends BaseActivity<ActivityImageDetailBinding
                 }
             });
             baseBind.viewPager.setCurrentItem(index);
+            checkDownload(index);
             downloadSingle.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    IllustDownload.downloadIllust(mIllustsBean, baseBind.viewPager.getCurrentItem(), (BaseActivity<?>) mContext);
+                    IllustDownload.downloadIllustCertainPage(mIllustsBean, baseBind.viewPager.getCurrentItem(), (BaseActivity<?>) mContext);
+                    if (Shaft.sSettings.isAutoPostLikeWhenDownload() && !mIllustsBean.isIs_bookmarked()) {
+                        PixivOperate.postLikeDefaultStarType(mIllustsBean);
+                    }
                 }
             });
             baseBind.viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
@@ -81,7 +82,8 @@ public class ImageDetailActivity extends BaseActivity<ActivityImageDetailBinding
 
                 @Override
                 public void onPageSelected(int i) {
-                    currentPage.setText("第" + (i + 1) + "P / 共" + mIllustsBean.getPage_count() + "P");
+                    checkDownload(i);
+                    currentPage.setText(String.format(Locale.getDefault(), "第 %d/%d P", i + 1, mIllustsBean.getPage_count()));
                 }
 
                 @Override
@@ -89,7 +91,11 @@ public class ImageDetailActivity extends BaseActivity<ActivityImageDetailBinding
 
                 }
             });
-            currentPage.setText("第" + (index + 1) + "P / 共" + mIllustsBean.getPage_count() + "P");
+            if(mIllustsBean.getPage_count() == 1){
+                currentPage.setVisibility(View.INVISIBLE);
+            }else{
+                currentPage.setText(String.format(Locale.getDefault(), "第 %d/%d P", index + 1, mIllustsBean.getPage_count()));
+            }
 
         } else if ("下载详情".equals(dataType)) {
             currentPage = findViewById(R.id.current_page);
@@ -108,7 +114,7 @@ public class ImageDetailActivity extends BaseActivity<ActivityImageDetailBinding
                     return localIllust.size();
                 }
             });
-            currentPage.setVisibility(View.GONE);
+            currentPage.setVisibility(View.INVISIBLE);
             baseBind.viewPager.setCurrentItem(index);
             baseBind.viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
                 @Override
@@ -140,6 +146,9 @@ public class ImageDetailActivity extends BaseActivity<ActivityImageDetailBinding
         }
     }
 
+    private void checkDownload(int i) {
+        downloadSingle.setVisibility(Common.isIllustDownloaded(mIllustsBean, i) ? View.INVISIBLE : View.VISIBLE);
+    }
 
     @Override
     protected void initData() {
@@ -153,5 +162,36 @@ public class ImageDetailActivity extends BaseActivity<ActivityImageDetailBinding
         } else {
             mActivity.finish();
         }
+    }
+
+    @Override
+    public boolean hideStatusBar() {
+        return true;
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            refreshSystemUiVisibility();
+        }
+    }
+
+    private void refreshSystemUiVisibility() {
+        final int includeFlag = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN;
+        int excludeFlag = 0;
+        if (Shaft.sSettings.isIllustDetailShowNavbar()) {
+            excludeFlag = excludeFlag
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+        }
+        final int flag = getWindow().getDecorView().getSystemUiVisibility();
+        getWindow().getDecorView().setSystemUiVisibility(flag | includeFlag & ~excludeFlag);
     }
 }

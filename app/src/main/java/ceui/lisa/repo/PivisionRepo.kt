@@ -6,9 +6,9 @@ import ceui.lisa.model.ListArticle
 import ceui.lisa.utils.Dev
 import io.reactivex.Observable
 
-class PivisionRepo(
-        private val dataType: String?,
-        private val isHorizontal: Boolean
+open class PivisionRepo(
+    private val dataType: String?,
+    private val isHorizontal: Boolean
 ) : RemoteRepo<ListArticle>() {
 
     override fun initApi(): Observable<ListArticle> {
@@ -19,7 +19,7 @@ class PivisionRepo(
         if (isHorizontal) {
             return null
         }
-        return Retro.getAppApi().getNextArticals(token(), nextUrl)
+        return Retro.getAppApi().getNextArticles(token(), nextUrl)
     }
 
     override fun localData(): Boolean {

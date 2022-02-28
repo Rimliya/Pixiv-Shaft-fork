@@ -7,26 +7,26 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
-public abstract class RemoteRepo<Response extends ListShow<?>> extends BaseRepo{
+public abstract class RemoteRepo<Response extends ListShow<?>> extends BaseRepo {
 
-    private Observable<Response> mApi;
-    private Function<? super Response, Response> mFunction;
+    private Observable<? extends Response> mApi;
+    private final Function<? super Response, Response> mFunction;
     protected String nextUrl = "";
 
     public RemoteRepo() {
         mFunction = mapper();
     }
 
-    public abstract Observable<Response> initApi();
+    public abstract Observable<? extends Response> initApi();
 
-    public abstract Observable<Response> initNextApi();
+    public abstract Observable<? extends Response> initNextApi();
 
     public void getFirstData(NullCtrl<Response> nullCtrl) {
         mApi = initApi();
         if (mApi != null) {
             mApi.subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread())
                     .map(mFunction)
+                    .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(nullCtrl);
         }
     }
@@ -35,8 +35,8 @@ public abstract class RemoteRepo<Response extends ListShow<?>> extends BaseRepo{
         mApi = initNextApi();
         if (mApi != null) {
             mApi.subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread())
                     .map(mFunction)
+                    .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(nullCtrl);
         }
     }
@@ -51,5 +51,9 @@ public abstract class RemoteRepo<Response extends ListShow<?>> extends BaseRepo{
 
     public void setNextUrl(String nextUrl) {
         this.nextUrl = nextUrl;
+    }
+
+    public boolean hasEffectiveUserFollowStatus() {
+        return true;
     }
 }

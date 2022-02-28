@@ -8,16 +8,14 @@ import android.widget.OverScroller;
 import androidx.annotation.NonNull;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.ViewCompat;
-
 import ceui.lisa.R;
-import ceui.lisa.utils.Common;
 
 public class FragmentRightContentBehavior extends CoordinatorLayout.Behavior<View> {
 
     private float headerHeight;
     private View contentView;
     private OverScroller scroller;
-    private Runnable scrollRunnable = new Runnable() {
+    private final Runnable scrollRunnable = new Runnable() {
         @Override
         public void run() {
             if (scroller != null) {

@@ -22,6 +22,11 @@ public interface DownloadDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(DownloadEntity illustTask);
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertDownloading(DownloadingEntity entity);
+
+    @Delete
+    void deleteDownloading(DownloadingEntity entity);
 
     /**
      * 删除一条下载记录
@@ -30,6 +35,9 @@ public interface DownloadDao {
      */
     @Delete
     void delete(DownloadEntity userEntity);
+
+    @Delete
+    void deleteMuteEntity(MuteEntity muteEntity);
 
     /**
      * 获取全部下载记录
@@ -41,21 +49,26 @@ public interface DownloadDao {
     @Query("SELECT * FROM illust_download_table ORDER BY downloadTime DESC LIMIT :limit OFFSET :offset")
     List<DownloadEntity> getAll(int limit, int offset);
 
+    @Query("SELECT * FROM illust_downloading_table")
+    List<DownloadingEntity> getAllDownloading();
+
     /**
      *
      */
     @Query("DELETE FROM illust_download_table")
     void deleteAllDownload();
 
+    @Query("DELETE FROM illust_downloading_table")
+    void deleteAllDownloading();
+
 
     /**
      * 新增一个浏览历史
      *
-     * @param userEntity
+     * @param illustHistoryEntity
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insert(IllustHistoryEntity userEntity);
-
+    void insert(IllustHistoryEntity illustHistoryEntity);
 
     /**
      * 删除一个浏览历史
@@ -65,16 +78,14 @@ public interface DownloadDao {
     @Delete
     void delete(IllustHistoryEntity userEntity);
 
-
     /**
      *
      */
     @Query("DELETE FROM illust_table")
     void deleteAllHistory();
 
-
     /**
-     * 查询所有浏览历史
+     * 分页查询所有浏览历史
      *
      * @param limit
      * @param offset
@@ -82,6 +93,14 @@ public interface DownloadDao {
      */
     @Query("SELECT * FROM illust_table ORDER BY time DESC LIMIT :limit OFFSET :offset")
     List<IllustHistoryEntity> getAllViewHistory(int limit, int offset);
+
+    /**
+     * 查询所有浏览历史
+     *
+     * @return
+     */
+    @Query("SELECT * FROM illust_table")
+    List<IllustHistoryEntity> getAllViewHistoryEntities();
 
 
     /**
@@ -124,4 +143,7 @@ public interface DownloadDao {
 
     @Query("DELETE FROM feature_table")
     void deleteAllFeature();
+
+    @Query("SELECT * FROM feature_table")
+    List<FeatureEntity> getAllFeatureEntities();
 }

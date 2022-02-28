@@ -20,7 +20,7 @@ import ceui.lisa.core.LocalRepo;
 import ceui.lisa.database.AppDatabase;
 import ceui.lisa.database.DownloadEntity;
 import ceui.lisa.databinding.FragmentBaseListBinding;
-import ceui.lisa.databinding.RecyViewHistoryBinding;
+import ceui.lisa.databinding.RecyDownloadedBinding;
 import ceui.lisa.interfaces.Callback;
 import ceui.lisa.interfaces.OnItemClickListener;
 import ceui.lisa.models.IllustsBean;
@@ -31,12 +31,12 @@ import ceui.lisa.utils.Params;
 public class FragmentDownloadFinish extends LocalListFragment<FragmentBaseListBinding,
         DownloadEntity> {
 
-    private List<IllustsBean> all = new ArrayList<>();
-    private List<String> filePaths = new ArrayList<>();
+    private final List<IllustsBean> all = new ArrayList<>();
+    private final List<String> filePaths = new ArrayList<>();
     private DownloadReceiver<?> mReceiver;
 
     @Override
-    public BaseAdapter<DownloadEntity, RecyViewHistoryBinding> adapter() {
+    public BaseAdapter<DownloadEntity, RecyDownloadedBinding> adapter() {
         return new DownloadedAdapter(allItems, mContext).setOnItemClickListener(new OnItemClickListener() {
             @Override
             public void onItemClick(View v, int position, int viewType) {
@@ -51,6 +51,11 @@ public class FragmentDownloadFinish extends LocalListFragment<FragmentBaseListBi
                     Intent intent = new Intent(mContext, UserActivity.class);
                     intent.putExtra(Params.USER_ID, all.get(position).getUser().getId());
                     startActivity(intent);
+                } else if (viewType == 2) {
+                    AppDatabase.getAppDatabase(mContext).downloadDao().delete(allItems.get(position));
+                    allItems.remove(position);
+                    mAdapter.notifyItemRemoved(position);
+                    mAdapter.notifyItemRangeChanged(position, allItems.size() - position);
                 }
             }
         });
@@ -79,6 +84,8 @@ public class FragmentDownloadFinish extends LocalListFragment<FragmentBaseListBi
 
     @Override
     public void onFirstLoaded(List<DownloadEntity> illustHistoryEntities) {
+        all.clear();
+        filePaths.clear();
         for (int i = 0; i < illustHistoryEntities.size(); i++) {
             IllustsBean illustsBean = Shaft.sGson.fromJson(
                     illustHistoryEntities.get(i).getIllustGson(), IllustsBean.class);
@@ -127,5 +134,10 @@ public class FragmentDownloadFinish extends LocalListFragment<FragmentBaseListBi
         if (mReceiver != null) {
             LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mReceiver);
         }
+    }
+
+    @Override
+    public boolean isLazy() {
+        return false;
     }
 }
