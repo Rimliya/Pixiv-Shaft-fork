@@ -29,6 +29,7 @@ import ceui.lisa.models.IllustsBean;
 import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Params;
 import ceui.lisa.utils.PixivOperate;
+import ceui.loxia.ObjectPool;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
@@ -64,7 +65,11 @@ public class VActivity extends BaseActivity<ActivityViewPagerBinding> {
                         return FragmentSingleUgora.newInstance(illustsBean);
                     } else {
                         if (Shaft.sSettings.isUseFragmentIllust()) {
-                            return FragmentIllust.newInstance(illustsBean);
+                            IllustsBean exist = ObjectPool.INSTANCE.getIllust(illustsBean.getId()).getValue();
+                            if (exist == null) {
+                                ObjectPool.INSTANCE.updateIllust(illustsBean);
+                            }
+                            return FragmentIllust.newInstance(illustsBean.getId());
                         } else {
                             return FragmentSingleIllust.newInstance(illustsBean);
                         }
@@ -165,11 +170,11 @@ public class VActivity extends BaseActivity<ActivityViewPagerBinding> {
             };
             baseBind.viewPager.addOnPageChangeListener(listener);
 
-            if(index < pageData.getList().size()){
+            if (index < pageData.getList().size()) {
                 baseBind.viewPager.setCurrentItem(index);
             }
 
-            if(index == 0){
+            if (index == 0) {
                 baseBind.viewPager.post(() -> listener.onPageSelected(baseBind.viewPager.getCurrentItem()));
             }
         } else {

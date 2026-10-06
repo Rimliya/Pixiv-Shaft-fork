@@ -1,7 +1,8 @@
 package ceui.lisa.activities;
 
+import static ceui.lisa.utils.Local.LOCAL_DATA;
+
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.IntentFilter;
@@ -11,19 +12,21 @@ import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.view.Gravity;
 
-import com.billy.android.swipe.SmartSwipeBack;
+import androidx.annotation.NonNull;
+
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.gson.Gson;
 import com.hjq.toast.ToastUtils;
-import com.scwang.smartrefresh.layout.SmartRefreshLayout;
-import com.scwang.smartrefresh.layout.footer.ClassicsFooter;
-import com.scwang.smartrefresh.layout.header.ClassicsHeader;
+import com.scwang.smart.refresh.footer.ClassicsFooter;
+import com.scwang.smart.refresh.header.ClassicsHeader;
+import com.scwang.smart.refresh.layout.SmartRefreshLayout;
 import com.tencent.mmkv.MMKV;
 
-import androidx.annotation.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import ceui.lisa.R;
+import ceui.lisa.database.AppDatabase;
 import ceui.lisa.feature.HostManager;
-import ceui.lisa.feature.ToastStyle;
 import ceui.lisa.helper.ShortcutHelper;
 import ceui.lisa.helper.ThemeHelper;
 import ceui.lisa.models.UserModel;
@@ -33,26 +36,31 @@ import ceui.lisa.utils.Local;
 import ceui.lisa.utils.Settings;
 import ceui.lisa.view.MyDeliveryHeader;
 import ceui.lisa.viewmodel.AppLevelViewModel;
+import ceui.loxia.ServicesProvider;
+import ceui.pixiv.db.EntityWrapper;
+import ceui.pixiv.session.SessionManager;
+import ceui.pixiv.ui.background.AppBackground;
+import ceui.pixiv.ui.task.TaskPool;
+import ceui.pixiv.utils.NetworkStateManager;
 import me.jessyan.progressmanager.ProgressManager;
 import okhttp3.OkHttpClient;
+import timber.log.Timber;
 
-import static ceui.lisa.utils.Local.LOCAL_DATA;
-
-public class Shaft extends Application {
+/**
+ * Where the app code starts.
+ */
+public class Shaft extends Application implements ServicesProvider {
 
     public static UserModel sUserModel;
     public static Settings sSettings;
     public static Gson sGson;
     public static SharedPreferences sPreferences;
-    protected NetWorkStateReceiver netWorkStateReceiver;
-    private OkHttpClient mOkHttpClient;
-    private static MMKV mmkv;
     public static AppLevelViewModel appViewModel;
-
     /**
      * 状态栏高度，初始化
      */
     public static int statusHeight = 0, toolbarHeight = 0;
+    private static MMKV mmkv;
     /**
      * 全局context
      */
@@ -61,17 +69,51 @@ public class Shaft extends Application {
 
     static {
         SmartRefreshLayout.setDefaultRefreshHeaderCreator((context, layout) -> {
-            return new ClassicsHeader(context);//.setTimeFormat(new DynamicTimeFormat("更新于 %s"));//指定为经典Header，默认是 贝塞尔雷达Header
+            return new ClassicsHeader(context);//.setTimeFormat(new DynamicTimeFormat("更新于 %s"));//指定为经典Header，默认是 贝塞尔雷达Header(BezierRadarHeader)
         });
 
         SmartRefreshLayout.setDefaultRefreshFooterCreator((context, layout) ->
                 new ClassicsFooter(context).setDrawableSize(20));
     }
 
+    protected NetWorkStateReceiver netWorkStateReceiver;
+    private NetworkStateManager networkStateManager;
+    private OkHttpClient mOkHttpClient;
+    private EntityWrapper entityWrapper;
+    private AppBackground appBackground;
+    private TaskPool taskPool;
+
     public static Context getContext() {
         return sContext;
     }
 
+    public static String getThemeColor() {
+        int current = Shaft.sSettings.getThemeIndex();
+        return switch (current) {
+            case 0 -> "#686bdd";
+            case 1 -> "#56baec";
+            case 2 -> "#008BF3";
+            case 3 -> "#03d0bf";
+            case 4 -> "#fee65e";
+            case 5 -> "#fe83a2";
+            case 6 -> "#F44336";
+            case 7 -> "#673AB7";
+            case 8 -> "#4CAF50";
+            case 9 -> "#E91E63";
+            default -> "#686bdd";
+        };
+    }
+
+    public static MMKV getMMKV() {
+        if (mmkv == null) {
+            mmkv = MMKV.defaultMMKV();
+        }
+        return mmkv;
+    }
+
+    /**
+     * Initialize the whole application.
+     */
     @Override
     public void onCreate() {
         super.onCreate();
@@ -83,17 +125,26 @@ public class Shaft extends Application {
 
         sPreferences = getSharedPreferences(LOCAL_DATA, Context.MODE_PRIVATE);
 
+        Timber.plant(new Timber.DebugTree());
+
         MMKV.initialize(this);
 
+
+        networkStateManager = new NetworkStateManager(this);
+        appBackground = new AppBackground();
+        taskPool = new TaskPool();
         sUserModel = Local.getUser();
 
-
         sSettings = Local.getSettings();
+
+        entityWrapper = new EntityWrapper(AppDatabase.getAppDatabase(this));
+        entityWrapper.initialize();
+
+        SessionManager.INSTANCE.initialize();
 
         updateTheme();
 
         ThemeHelper.applyTheme(null, sSettings.getThemeType());
-
 
         this.mOkHttpClient = ProgressManager.getInstance().with(new OkHttpClient.Builder()).build();
 
@@ -105,15 +156,16 @@ public class Shaft extends Application {
         }
         toolbarHeight = DensityUtil.dp2px(56.0f);
 
+        //Init the network
         if (netWorkStateReceiver == null) {
             netWorkStateReceiver = new NetWorkStateReceiver();
         }
 
         HostManager.get().init();
 
+        //Init Toast utils
         ToastUtils.init(this);
         ToastUtils.setGravity(Gravity.BOTTOM, 0, 0);
-        ToastUtils.initStyle(new ToastStyle(this));
 
         FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(
                 sSettings.isFirebaseEnable()
@@ -122,15 +174,6 @@ public class Shaft extends Application {
         IntentFilter filter = new IntentFilter();
         filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(netWorkStateReceiver, filter);
-
-        if (sSettings.isGlobalSwipeBack()) {
-            SmartSwipeBack.activitySlidingBack(this, new SmartSwipeBack.ActivitySwipeBackFilter() {
-                @Override
-                public boolean onFilter(Activity activity) {
-                    return !(activity instanceof MainActivity);
-                }
-            });
-        }
 
         ShortcutHelper.addAppShortcuts();
 
@@ -141,6 +184,9 @@ public class Shaft extends Application {
         return mOkHttpClient;
     }
 
+    /**
+     * Update the theme according to the setting.
+     */
     private void updateTheme() {
         int current = Shaft.sSettings.getThemeIndex();
         switch (current) {
@@ -189,13 +235,6 @@ public class Shaft extends Application {
         }
     }
 
-    public static MMKV getMMKV() {
-        if (mmkv == null) {
-            mmkv = MMKV.defaultMMKV();
-        }
-        return mmkv;
-    }
-
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -206,5 +245,30 @@ public class Shaft extends Application {
                 MyDeliveryHeader.changeCloudColor(getContext());
                 break;
         }
+    }
+
+    @Override
+    public @NotNull MMKV getPrefStore() {
+        return getMMKV();
+    }
+
+    @Override
+    public @NotNull NetworkStateManager getNetworkStateManager() {
+        return networkStateManager;
+    }
+
+    @Override
+    public @NotNull EntityWrapper getEntityWrapper() {
+        return entityWrapper;
+    }
+
+    @Override
+    public @NotNull AppBackground getAppBackground() {
+        return appBackground;
+    }
+
+    @Override
+    public @NotNull TaskPool getTaskPool() {
+        return taskPool;
     }
 }

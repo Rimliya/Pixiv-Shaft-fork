@@ -4,7 +4,11 @@ import android.content.SharedPreferences;
 
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.models.UserModel;
+import timber.log.Timber;
 
+/**
+ * A class deal with the {@link UserModel} and APP {@link Settings}
+ * */
 public class Local {
 
     public static final String LOCAL_DATA = "local_data";
@@ -23,10 +27,10 @@ public class Local {
     }
 
     public static UserModel getUser() {
-        return Shaft.sGson.fromJson(
-                Shaft.sPreferences
-                        .getString(USER, ""),
-                UserModel.class);
+        String json = Shaft.sPreferences
+                .getString(USER, "");
+        Timber.d("getUserJson%s", json);
+        return Shaft.sGson.fromJson(json, UserModel.class);
     }
 
     public static Settings getSettings() {

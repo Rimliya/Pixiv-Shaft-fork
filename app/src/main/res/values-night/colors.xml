@@ -15,6 +15,7 @@
 
     <color name="follow_user_illust_divider">#ececec</color>
 
+    <color name="loading_placeholder">#14FFFFFF</color>
 
     <color name="white">#FFFFFF</color>
     <color name="white_and_black">#141414</color>
@@ -70,5 +71,18 @@
     <color name="pixivision_logo_2">#AAAAAA</color>
     <color name="delivery_header_cloud">#465B70</color>
     <color name="panel_bg">#2A2A2A</color>
+    <color name="image_background">#1AFFFFFF</color>
 
+    <color name="text00">#FFFFFF</color>
+    <color name="text10">#CCFFFFFF</color>
+    <color name="text20">#99FFFFFF</color>
+    <color name="white10">#1AFFFFFF</color>
+    <color name="white40">#66FFFFFF</color>
+    <color name="list_divider">#26FFFFFF</color>
+
+    <color name="page_default_background">#0A001A</color>
+
+    <color name="view_pager_shoulder">#4D000000</color>
+
+    <color name="splash_background">#10B7F5</color>
 </resources>

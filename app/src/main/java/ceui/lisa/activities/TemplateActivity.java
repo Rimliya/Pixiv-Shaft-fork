@@ -21,7 +21,6 @@ import ceui.lisa.fragments.FragmentAboutApp;
 import ceui.lisa.fragments.FragmentBookedTag;
 import ceui.lisa.fragments.FragmentCollection;
 import ceui.lisa.fragments.FragmentColors;
-import ceui.lisa.fragments.FragmentComment;
 import ceui.lisa.fragments.FragmentDoing;
 import ceui.lisa.fragments.FragmentDonate;
 import ceui.lisa.fragments.FragmentDownload;
@@ -47,6 +46,7 @@ import ceui.lisa.fragments.FragmentNewNovel;
 import ceui.lisa.fragments.FragmentNewNovels;
 import ceui.lisa.fragments.FragmentNiceFriend;
 import ceui.lisa.fragments.FragmentNovelHolder;
+import ceui.lisa.fragments.FragmentNovelMarkers;
 import ceui.lisa.fragments.FragmentNovelSeries;
 import ceui.lisa.fragments.FragmentNovelSeriesDetail;
 import ceui.lisa.fragments.FragmentPopularNovel;
@@ -73,10 +73,18 @@ import ceui.lisa.fragments.FragmentWorkSpace;
 import ceui.lisa.helper.BackHandlerHelper;
 import ceui.lisa.models.IllustsBean;
 import ceui.lisa.models.NovelBean;
+import ceui.lisa.models.UserBean;
 import ceui.lisa.models.UserPreviewsBean;
 import ceui.lisa.utils.Local;
 import ceui.lisa.utils.Params;
 import ceui.lisa.utils.ReverseResult;
+import ceui.loxia.ObjectPool;
+import ceui.loxia.ObjectType;
+import ceui.loxia.flag.FlagDescFragment;
+import ceui.loxia.flag.FlagReasonFragment;
+import ceui.pixiv.ui.comments.CommentsFragment;
+import ceui.pixiv.ui.prime.PrimeTagDetailFragment;
+import ceui.pixiv.ui.prime.PrimeTagsFragment;
 
 public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> implements ColorPickerDialogListener {
 
@@ -130,13 +138,7 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
                     Uri imageUri = intent.getParcelableExtra(Params.REVERSE_SEARCH_IMAGE_URI);
                     return FragmentWebView.newInstance(result.getTitle(), result.getUrl(), result.getResponseBody(), result.getMime(), result.getEncoding(), result.getHistory_url(), imageUri);
                 case "相关评论": {
-                    String title = intent.getStringExtra(Params.ILLUST_TITLE);
-                    int workId = intent.getIntExtra(Params.ILLUST_ID, 0);
-                    if(workId == 0){
-                        workId = intent.getIntExtra(Params.NOVEL_ID, 0);
-                        return FragmentComment.newNovelInstance(workId, title);
-                    }
-                    return FragmentComment.newIllustInstance(workId, title);
+                    return getCommentsFragment(intent);
                 }
                 case "账号管理":
                     return new FragmentLocalUsers();
@@ -145,8 +147,9 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
                 }
                 case "按标签收藏": {
                     int id = intent.getIntExtra(Params.ILLUST_ID, 0);
+                    String type = intent.getStringExtra(Params.DATA_TYPE);
                     String[] tagNames = intent.getStringArrayExtra(Params.TAG_NAMES);
-                    return FragmentSB.newInstance(id, tagNames);
+                    return FragmentSB.newInstance(id, type, tagNames);
                 }
                 case "关于软件":
                     return new FragmentAboutApp();
@@ -222,6 +225,16 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
                     return new FragmentFeature();
                 case "我的作业环境":
                     return new FragmentWorkSpace();
+                case "PrimeTagsList":
+                    return new PrimeTagsFragment();
+                case "PrimeTagDetail":
+                    String path = intent.getStringExtra("path");
+                    assert path != null;
+
+                    String name = intent.getStringExtra("name");
+                    assert name != null;
+
+                    return PrimeTagDetailFragment.Companion.newInstance(name, path);
                 case "存储访问":
                     return new FragmentStorage();
                 case "任务中心":
@@ -230,12 +243,27 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
                     return FragmentCollection.newInstance(0);
                 case "我的小说收藏":
                     return FragmentCollection.newInstance(1);
+                case "追更列表":
+                    return FragmentCollection.newInstance(3);
                 case "我的关注":
                     return FragmentCollection.newInstance(2);
+                case "小说书签":
+                    return new FragmentNovelMarkers();
                 case "主题颜色":
                     return new FragmentColors();
                 case "测试测试":
                     return new FragmentSAF();
+                case "举报插画":
+                    return FlagReasonFragment.Companion.newInstance(
+                            intent.getIntExtra(FlagDescFragment.FlagObjectIdKey, 0),
+                            intent.getIntExtra(FlagDescFragment.FlagObjectTypeKey, 0)
+                    );
+                case "填写举报详细信息":
+                    return FlagDescFragment.Companion.newInstance(
+                            intent.getIntExtra(FlagDescFragment.FlagReasonIdKey, 0),
+                            intent.getIntExtra(FlagDescFragment.FlagObjectIdKey, 0),
+                            intent.getIntExtra(FlagDescFragment.FlagObjectTypeKey, 0)
+                    );
                 case "相关用户":
                     return FragmentRelatedUser.newInstance(intent.getIntExtra(Params.USER_ID, 0));
                 case "Markdown":
@@ -246,6 +274,44 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
             }
         }
         return null;
+    }
+
+
+    private CommentsFragment getCommentsFragment(Intent intent) {
+        int workId = intent.getIntExtra(Params.ILLUST_ID, 0);
+
+        if (workId == 0) {
+            workId = intent.getIntExtra(Params.NOVEL_ID, 0);
+            NovelBean hit = ObjectPool.INSTANCE.getNovel(workId).getValue();
+            int illustArthurId = getArthurIdFromNovel(hit);
+            return CommentsFragment.Companion.newInstance(workId, illustArthurId, ObjectType.NOVEL);
+        } else {
+            IllustsBean hit = ObjectPool.INSTANCE.getIllust(workId).getValue();
+            int illustArthurId = getArthurIdFromIllust(hit);
+            return CommentsFragment.Companion.newInstance(workId, illustArthurId, ObjectType.ILLUST);
+        }
+    }
+
+    // Helper method to extract Arthur ID from NovelBean
+    private int getArthurIdFromNovel(NovelBean hit) {
+        if (hit != null) {
+            UserBean user = hit.getUser();
+            if (user != null) {
+                return user.getId();
+            }
+        }
+        return 0;
+    }
+
+    // Helper method to extract Arthur ID from IllustsBean
+    private int getArthurIdFromIllust(IllustsBean hit) {
+        if (hit != null) {
+            UserBean user = hit.getUser();
+            if (user != null) {
+                return user.getId();
+            }
+        }
+        return 0;
     }
 
     @Override
@@ -324,6 +390,14 @@ public class TemplateActivity extends BaseActivity<ActivityFragmentBinding> impl
     public void onBackPressed() {
         if (!BackHandlerHelper.handleBackPress(this)) {
             super.onBackPressed();
+        }
+    }
+
+    public void onFontSizeSelected(int size) {
+        if (childFragment instanceof FragmentNovelHolder) {
+            Shaft.sSettings.setNovelHolderTextSize(size);
+            ((FragmentNovelHolder) childFragment).setTextSize(size);
+            Local.setSettings(Shaft.sSettings);
         }
     }
 }

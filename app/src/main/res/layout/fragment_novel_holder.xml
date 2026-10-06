@@ -103,7 +103,7 @@
 <!--                            android:textSize="13sp"-->
 <!--                            android:id="@+id/save_novel"-->
 <!--                            android:layout_marginEnd="@dimen/six_dp"-->
-<!--                            android:text="@string/string_104"-->
+<!--                            android:text="@string/string_4"-->
 <!--                            android:layout_centerVertical="true"-->
 <!--                            android:textColor="@color/white_to_gray">-->
 
@@ -181,6 +181,15 @@
                         android:paddingHorizontal="@dimen/sixteen_dp"
                         android:textColor="@color/white_to_gray"
                         android:textColorLink="@color/white_to_gray"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/how_many_word"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/sixteen_dp"
+                        android:paddingVertical="@dimen/six_dp"
+                        android:textColor="@color/white_to_gray"
                         android:textSize="11sp" />
 
                     <LinearLayout

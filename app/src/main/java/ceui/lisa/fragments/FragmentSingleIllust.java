@@ -22,12 +22,13 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.Observer;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.blankj.utilcode.util.ColorUtils;
 import com.bumptech.glide.Glide;
 import com.qmuiteam.qmui.skin.QMUISkinManager;
 import com.qmuiteam.qmui.widget.dialog.QMUIDialog;
 import com.qmuiteam.qmui.widget.dialog.QMUIDialogAction;
-import com.scwang.smartrefresh.layout.footer.FalsifyFooter;
-import com.scwang.smartrefresh.layout.header.FalsifyHeader;
+import com.scwang.smart.refresh.header.FalsifyFooter;
+import com.scwang.smart.refresh.header.FalsifyHeader;
 import com.zhy.view.flowlayout.FlowLayout;
 import com.zhy.view.flowlayout.TagAdapter;
 import com.zhy.view.flowlayout.TagFlowLayout;
@@ -102,9 +103,6 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
                         .apply(bitmapTransform(new BlurTransformation(25, 3)))
                         .transition(withCrossFade())
                         .into(baseBind.bgImage);
-                break;
-            case Configuration.UI_MODE_NIGHT_YES:
-                baseBind.bgImage.setImageResource(R.color.black);
                 break;
         }
 
@@ -194,7 +192,7 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
 
                 @Override
                 public void updateDrawState(TextPaint ds) {
-                    ds.setColor(Common.resolveThemeAttribute(mContext, R.attr.colorPrimary));
+                    ds.setColor(Common.resolveThemeAttribute(mContext, androidx.appcompat.R.attr.colorPrimary));
                 }
             };
             SpannableString spannableString;
@@ -311,6 +309,7 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
             public boolean onLongClick(View v) {
                 Intent intent = new Intent(mContext, TemplateActivity.class);
                 intent.putExtra(Params.ILLUST_ID, illust.getId());
+                intent.putExtra(Params.DATA_TYPE, Params.TYPE_ILLUST);
                 intent.putExtra(Params.TAG_NAMES, illust.getTagNames());
                 intent.putExtra(Params.LAST_CLASS, getClass().getSimpleName());
                 intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "按标签收藏");
@@ -365,7 +364,8 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
         baseBind.userName.setText(illust.getUser().getName());
 
         SpannableString sizeString = new SpannableString(getString(R.string.string_193, illust.getWidth(), illust.getHeight()));
-        int currentPrimaryColorId = Common.resolveThemeAttribute(mContext, R.attr.colorPrimary);
+//        int currentPrimaryColorId = Common.resolveThemeAttribute(mContext, androidx.appcompat.R.attr.colorPrimary);
+        int currentPrimaryColorId = ColorUtils.getColor(R.color.page_default_background);
         sizeString.setSpan(new ForegroundColorSpan(currentPrimaryColorId),
                 sizeString.length()-illust.getSize().length(), sizeString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         baseBind.illustPx.setText(sizeString);
@@ -529,7 +529,7 @@ public class FragmentSingleIllust extends BaseFragment<FragmentSingleIllustBindi
         if(AppLevelViewModel.FollowUserStatus.isFollowed(status)){
             baseBind.follow.setText(R.string.string_177);
         }else{
-            baseBind.follow.setText(R.string.string_178);
+            baseBind.follow.setText(R.string.string_4);
         }
     }
 }

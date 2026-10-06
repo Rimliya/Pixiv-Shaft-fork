@@ -7,10 +7,7 @@ import com.blankj.utilcode.util.DeviceUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.security.cert.X509Certificate;
 import java.util.Collections;
-
-import javax.net.ssl.X509TrustManager;
 
 import ceui.lisa.activities.Shaft;
 import ceui.lisa.helper.LanguageHelper;
@@ -29,8 +26,21 @@ import static ceui.lisa.http.SignApi.SIGN_API;
 
 public class Retro {
 
+    /**
+     * @return AppApi the api that the request needed
+     * <p>
+     * Configued in {@link AppApi}
+     * </p>
+     * <p>
+     *     get() returns a Java interface to HTTP calls,and then it .create(),creates the AppApi
+     * </p>
+     */
     public static AppApi getAppApi() {
         return get().create(AppApi.class);
+    }
+
+    public static LofterApi getLofterApi() {
+        return get().create(LofterApi.class);
     }
 
     public static void refreshAppApi() {
@@ -72,10 +82,24 @@ public class Retro {
         return before;
     }
 
+    /**
+     * @param baseUrl The base url
+     *                <p>
+     *                For example:
+     *                </p>
+     *                <p>
+     *     String API_BASE_URL = "https://app-api.pixiv.net/";in {@link AppApi}
+     *                </p>
+     * */
     private static Retrofit buildRetrofit(String baseUrl) {
         return buildRetrofit(baseUrl, true);
     }
-
+    /**
+     * Retrofit: A Type-Safe HTTP Client for Android and JVM
+     * Retrofit is a popular and powerful type-safe HTTP client library for Android and Java Virtual Machine (JVM) applications. It simplifies the process of making network requests by converting your REST API endpoints into Java interfaces.
+     * @param baseUrl   The base URL
+     * @param autoFuckChina auto
+     * */
     private static Retrofit buildRetrofit(String baseUrl, boolean autoFuckChina) {
         OkHttpClient.Builder builder = getLogClient();
         try {
@@ -126,24 +150,18 @@ public class Retro {
         return retrofit.create(service);
     }
 
-    @SuppressLint("CustomX509TrustManager")
-    static class pixivOkHttpClient implements X509TrustManager {
-        public void checkClientTrusted(X509Certificate[] param1ArrayOfX509Certificate, String param1String) {
-        }
 
-        public void checkServerTrusted(X509Certificate[] param1ArrayOfX509Certificate, String param1String) {
-        }
-
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
-    }
 
 
     private static class Holder {
         private static Retrofit appRetrofit = buildRetrofit(API_BASE_URL);
     }
-
+    /**
+     * @return The static Retrofit
+     * <p>
+     * @see Retrofit retrofit2.Retrofit
+     * </p>
+     */
     private static Retrofit get() {
         return Holder.appRetrofit;
     }

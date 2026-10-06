@@ -11,12 +11,14 @@ import ceui.lisa.model.ListLive;
 import ceui.lisa.model.ListMangaOfSeries;
 import ceui.lisa.model.ListMangaSeries;
 import ceui.lisa.model.ListNovel;
+import ceui.lisa.model.ListNovelMarkers;
 import ceui.lisa.model.ListNovelOfSeries;
 import ceui.lisa.model.ListNovelSeries;
 import ceui.lisa.model.ListSimpleUser;
 import ceui.lisa.model.ListTag;
 import ceui.lisa.model.ListTrendingtag;
 import ceui.lisa.model.ListUser;
+import ceui.lisa.model.ListWatchlistNovel;
 import ceui.lisa.model.RecmdIllust;
 import ceui.lisa.models.CommentHolder;
 import ceui.lisa.models.GifResponse;
@@ -31,6 +33,8 @@ import ceui.lisa.models.UserFollowDetail;
 import ceui.lisa.models.UserState;
 import io.reactivex.Observable;
 import okhttp3.MultipartBody;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
 import retrofit2.http.Field;
 import retrofit2.http.FieldMap;
 import retrofit2.http.FormUrlEncoded;
@@ -50,15 +54,14 @@ public interface AppApi {
 
     /**
      * 获取排行榜
-     *
-     * @param mode
-     * @return
+     * @param mode The type of rank:day/week/.../
+     * @param token Token of current user
+     * @return ListIllust Observable<ListIllust>{@link ListIllust}
      */
     @GET("v1/illust/ranking?filter=for_android")
     Observable<ListIllust> getRank(@Header("Authorization") String token,
                                    @Query("mode") String mode,
                                    @Query("date") String date);
-
     @GET("v1/novel/ranking?filter=for_android")
     Observable<ListNovel> getRankNovel(@Header("Authorization") String token,
                                        @Query("mode") String mode,
@@ -66,12 +69,12 @@ public interface AppApi {
 
     /**
      * 推荐榜单
-     *
-     * @param token
-     * @return
+     * @param token Token of current user
+     * @param include_ranking_illusts (indoubt)
+     * @return RecmdIllust Observable<RecmdIllust>{@link RecmdIllust}
      */
-    @GET("v1/illust/recommended?include_privacy_policy=true&filter=for_android&include_ranking_illusts=true")
-    Observable<RecmdIllust> getRecmdIllust(@Header("Authorization") String token);
+    @GET("v1/illust/recommended?include_privacy_policy=true&filter=for_android")
+    Observable<RecmdIllust> getRecmdIllust(@Header("Authorization") String token, @Query("include_ranking_illusts") boolean include_ranking_illusts);
 
 
     @GET("v1/manga/recommended?include_privacy_policy=true&filter=for_android&include_ranking_illusts=true")
@@ -80,8 +83,9 @@ public interface AppApi {
     @GET("v1/novel/recommended?include_privacy_policy=true&filter=for_android&include_ranking_novels=true")
     Observable<ListNovel> getRecmdNovel(@Header("Authorization") String token);
 
-    @GET("v1/novel/follow?restrict=public")
-    Observable<ListNovel> getBookedUserSubmitNovel(@Header("Authorization") String token);
+    @GET("v1/novel/follow")
+    Observable<ListNovel> getBookedUserSubmitNovel(@Header("Authorization") String token,
+                                                   @Query("restrict") String restrict);
 
 
     @GET("v1/trending-tags/{type}?filter=for_android&include_translated_tag_results=true")
@@ -237,11 +241,11 @@ public interface AppApi {
                                               @Query("user_id") int user_id);
 
 
-    @GET("v1/illust/comments")
+    @GET("/v3/illust/comments")
     Observable<ListComment> getIllustComment(@Header("Authorization") String token,
                                              @Query("illust_id") int illust_id);
 
-    @GET("v1/novel/comments")
+    @GET("v3/novel/comments")
     Observable<ListComment> getNovelComment(@Header("Authorization") String token,
                                        @Query("novel_id") int novel_id);
 
@@ -278,9 +282,9 @@ public interface AppApi {
 
     @FormUrlEncoded
     @POST("v2/illust/bookmark/add")
-    Observable<NullResponse> postLike(@Header("Authorization") String token,
-                                      @Field("illust_id") int illust_id,
-                                      @Field("restrict") String restrict);
+    Observable<NullResponse> postLikeIllust(@Header("Authorization") String token,
+                                            @Field("illust_id") int illust_id,
+                                            @Field("restrict") String restrict);
 
     @FormUrlEncoded
     @POST("v2/novel/bookmark/add")
@@ -290,15 +294,22 @@ public interface AppApi {
 
     @FormUrlEncoded
     @POST("v2/illust/bookmark/add")
-    Observable<NullResponse> postLike(@Header("Authorization") String token,
-                                      @Field("illust_id") int illust_id,
-                                      @Field("restrict") String restrict,
-                                      @Field("tags[]") String... tags);
+    Observable<NullResponse> postLikeIllustWithTags(@Header("Authorization") String token,
+                                                    @Field("illust_id") int illust_id,
+                                                    @Field("restrict") String restrict,
+                                                    @Field("tags[]") String... tags);
+
+    @FormUrlEncoded
+    @POST("v2/novel/bookmark/add")
+    Observable<NullResponse> postLikeNovelWithTags(@Header("Authorization") String token,
+                                                    @Field("novel_id") int novel_id,
+                                                    @Field("restrict") String restrict,
+                                                    @Field("tags[]") String... tags);
 
     @FormUrlEncoded
     @POST("v1/illust/bookmark/delete")
-    Observable<NullResponse> postDislike(@Header("Authorization") String token,
-                                         @Field("illust_id") int illust_id);
+    Observable<NullResponse> postDislikeIllust(@Header("Authorization") String token,
+                                               @Field("illust_id") int illust_id);
 
     @FormUrlEncoded
     @POST("v1/novel/bookmark/delete")
@@ -308,7 +319,7 @@ public interface AppApi {
 
     @GET("v1/illust/detail?filter=for_android")
     Observable<IllustSearchResponse> getIllustByID(@Header("Authorization") String token,
-                                                   @Query("illust_id") int illust_id);
+                                                   @Query("illust_id") long illust_id);
 
 
     @GET("v1/search/user?filter=for_android")
@@ -331,6 +342,28 @@ public interface AppApi {
                                           @Query("search_target") String search_target);
 
 
+    /**
+     * (In doubt)
+     * Search by key word
+     * <p>
+     *     For example:
+     * </p>
+     * <p>
+     *     "洛天依" in Chinese
+     * </p>
+     * <p>
+     *     "\u6d1b\u5929\u4f9d" in Unicode
+     * </p>
+     * <p>
+     *     "%E6%B4%9B%E5%A4%A9%E4%BE%9D" in URL
+     * </p>
+     * <p>
+     *     URL:"https://app-api.pixiv.net/v2/search/autocomplete?merge_plain_keyword_results=true&word=%E6%B4%9B%E5%A4%A9%E4%BE%9D"
+     * </p>
+     *
+     * @return {"tags":[{"name":"\u6d1b\u5929\u4f9d","translated_name":null}]}
+     *
+     */
     // v2/search/autocomplete?merge_plain_keyword_results=true&word=%E5%A5%B3%E4%BD%93 HTTP/1.1
     @GET("v2/search/autocomplete?merge_plain_keyword_results=true")
     Observable<ListTrendingtag> searchCompleteWord(@Header("Authorization") String token,
@@ -338,35 +371,40 @@ public interface AppApi {
 
 
     /**
-     * 获取插画收藏的标签
+     * 获取所有插画收藏的标签
      */
     //GET v1/user/bookmark-tags/illust?user_id=41531382&restrict=public HTTP/1.1
     @GET("v1/user/bookmark-tags/illust")
-    Observable<ListTag> getBookmarkTags(@Header("Authorization") String token,
-                                        @Query("user_id") int user_id,
-                                        @Query("restrict") String restrict);
+    Observable<ListTag> getAllIllustBookmarkTags(@Header("Authorization") String token,
+                                                 @Query("user_id") int user_id,
+                                                 @Query("restrict") String restrict);
 
     /**
-     * 获取小说收藏的标签
+     * 获取所有小说收藏的标签
      */
     //GET v1/user/bookmark-tags/novel?user_id=41531382&restrict=public HTTP/1.1
     @GET("v1/user/bookmark-tags/novel")
-    Observable<ListTag> getNovelBookmarkTags(@Header("Authorization") String token,
-                                        @Query("user_id") int user_id,
-                                        @Query("restrict") String restrict);
+    Observable<ListTag> getAllNovelBookmarkTags(@Header("Authorization") String token,
+                                                @Query("user_id") int user_id,
+                                                @Query("restrict") String restrict);
 
 
     @GET
     Observable<ListTag> getNextTags(@Header("Authorization") String token,
                                     @Url String nextUrl);
 
-
-    // GET v2/illust/bookmark/detail?illust_id=72878894 HTTP/1.1
-
-
+    /**
+     * 获取单个插画收藏的标签
+     */
     @GET("v2/illust/bookmark/detail")
     Observable<ListBookmarkTag> getIllustBookmarkTags(@Header("Authorization") String token,
                                                       @Query("illust_id") int illust_id);
+    /**
+     * 获取单个小说收藏的标签
+     */
+    @GET("v2/novel/bookmark/detail")
+    Observable<ListBookmarkTag> getNovelBookmarkTags(@Header("Authorization") String token,
+                                                      @Query("novel_id") int novel_id);
 
 
     /**
@@ -398,10 +436,9 @@ public interface AppApi {
     Observable<ListNovel> getNewNovels(@Header("Authorization") String token);
 
 
-    //获取好P友
-    @GET("v1/novel/text")
-    Observable<NovelDetail> getNovelDetail(@Header("Authorization") String token,
-                                           @Query("novel_id") int novel_id);
+    @GET("/webview/v2/novel")
+    Call<ResponseBody> getNovelDetailV2(@Header("Authorization") String token,
+                                        @Query("id") long id);
 
 
     //获取好P友
@@ -428,7 +465,7 @@ public interface AppApi {
 
     @GET("v2/novel/detail")
     Observable<NovelSearchResponse> getNovelByID(@Header("Authorization") String token,
-                                                 @Query("novel_id") int novel_id);
+                                                 @Query("novel_id") long novel_id);
 
     @GET("v1/illust/series?filter=for_android")
     Observable<ListMangaOfSeries> getMangaSeriesById(@Header("Authorization") String token,
@@ -517,4 +554,31 @@ public interface AppApi {
     @GET("v1/user/related?filter=for_android")
     Observable<ListUser> getRelatedUsers(@Header("Authorization") String token,
                                              @Query("seed_user_id") int seed_user_id);
+
+    // 小说追更列表
+    @GET("v1/watchlist/novel")
+    Observable<ListWatchlistNovel> getWatchlistNovel(@Header("Authorization") String token);
+
+    @GET
+    Observable<ListWatchlistNovel> getNextWatchlistNovel(@Header("Authorization") String token,
+                                                         @Url String next_url);
+
+    // 加入/取消追更小说
+    @FormUrlEncoded
+    @POST("v1/watchlist/novel/add")
+    Observable<NullResponse> postWatchlistNovelAdd(@Header("Authorization") String token,
+                                                   @Field("series_id") int series_id);
+
+    @FormUrlEncoded
+    @POST("v1/watchlist/novel/delete")
+    Observable<NullResponse> postWatchlistNovelDelete(@Header("Authorization") String token,
+                                                      @Field("series_id") int series_id);
+
+    // 小说书签
+    @GET("v2/novel/markers")
+    Observable<ListNovelMarkers> getNovelMarkers(@Header("Authorization") String token);
+
+    @GET
+    Observable<ListNovelMarkers> getNextNovelMarkers(@Header("Authorization") String token,
+                                                     @Url String next_url);
 }

@@ -36,15 +36,16 @@ public class RankActivity extends BaseActivity<ActivityMultiViewPagerBinding> im
     protected void initView() {
         setSupportActionBar(baseBind.toolbar);
         baseBind.toolbar.setNavigationOnClickListener(v -> finish());
-        baseBind.toolbarTitle.setText("排行榜");
+        baseBind.toolbarTitle.setText(mContext.getString(R.string.ranking_illust));
         dataType = getIntent().getStringExtra("dataType");
         queryDate = getIntent().getStringExtra("date");
-        baseBind.viewPager.setPageTransformer(true, new DrawerTransformer());
+//        baseBind.viewPager.setPageTransformer(true, new DrawerTransformer());
 
         final String[] CHINESE_TITLES = new String[]{
                 mContext.getString(R.string.daily_rank),
                 mContext.getString(R.string.weekly_rank),
                 mContext.getString(R.string.monthly_rank),
+                mContext.getString(R.string.created_by_ai),
                 mContext.getString(R.string.man_like),
                 mContext.getString(R.string.woman_like),
                 mContext.getString(R.string.self_done),
@@ -52,7 +53,9 @@ public class RankActivity extends BaseActivity<ActivityMultiViewPagerBinding> im
                 mContext.getString(R.string.r_eighteen),
                 mContext.getString(R.string.r_eighteen_weekly_rank),
                 mContext.getString(R.string.r_eighteen_male_rank),
-                mContext.getString(R.string.r_eighteen_female_rank)
+                mContext.getString(R.string.r_eighteen_female_rank),
+                mContext.getString(R.string.r_eighteen_ai_rank),
+                mContext.getString(R.string.r_eighteen_guro_rank)
         };
 
         final String[] CHINESE_TITLES_MANGA = new String[]{
@@ -170,7 +173,7 @@ public class RankActivity extends BaseActivity<ActivityMultiViewPagerBinding> im
             start.set(2008, 0, 1);
             dpd.setMinDate(start);
             dpd.setMaxDate(now);
-            dpd.setAccentColor(Common.resolveThemeAttribute(mContext, R.attr.colorPrimary));
+            dpd.setAccentColor(Common.resolveThemeAttribute(mContext, androidx.appcompat.R.attr.colorPrimary));
             dpd.setThemeDark(mContext.getResources().getBoolean(R.bool.is_night_mode));
             dpd.show(getSupportFragmentManager(), "DatePickerDialog");
             return true;

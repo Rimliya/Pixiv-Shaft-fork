@@ -13,6 +13,10 @@
         android:focusable="true"
         android:focusableInTouchMode="true">
 
+        <View
+            android:layout_width="match_parent"
+            android:background="@color/page_default_background"
+            android:layout_height="match_parent"/>
 
         <ImageView
             android:id="@+id/bg_image"
@@ -21,7 +25,7 @@
             android:scaleType="centerCrop" />
 
 
-        <com.scwang.smartrefresh.layout.SmartRefreshLayout
+        <com.scwang.smart.refresh.layout.SmartRefreshLayout
             android:id="@+id/refreshLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
@@ -142,7 +146,7 @@
                                     android:layout_alignParentEnd="true"
                                     android:layout_centerVertical="true"
                                     android:layout_marginEnd="@dimen/sixteen_dp"
-                                    android:text="@string/string_104"
+                                    android:text="@string/string_4"
                                     android:textColor="?attr/colorPrimary"
                                     android:textStyle="bold" />
 
@@ -334,7 +338,7 @@
 
             </androidx.core.widget.NestedScrollView>
 
-        </com.scwang.smartrefresh.layout.SmartRefreshLayout>
+        </com.scwang.smart.refresh.layout.SmartRefreshLayout>
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"

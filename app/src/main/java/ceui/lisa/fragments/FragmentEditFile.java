@@ -17,7 +17,7 @@ import androidx.core.content.ContextCompat;
 
 import com.blankj.utilcode.util.UriUtils;
 import com.bumptech.glide.Glide;
-import com.scwang.smartrefresh.layout.SmartRefreshLayout;
+import com.scwang.smart.refresh.layout.SmartRefreshLayout;
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog;
 
 import java.io.File;
@@ -340,7 +340,7 @@ public class FragmentEditFile extends SwipeFragment<FragmentEditFileBinding> imp
                                 start.set(now.get(Calendar.YEAR) - 100, 0, 1);
                                 dpd.setMinDate(start);
                                 dpd.setMaxDate(now);
-                                dpd.setAccentColor(Common.resolveThemeAttribute(mContext, R.attr.colorPrimary));
+                                dpd.setAccentColor(Common.resolveThemeAttribute(mContext, androidx.appcompat.R.attr.colorPrimary));
                                 dpd.setThemeDark(mContext.getResources().getBoolean(R.bool.is_night_mode));
                                 dpd.show(getParentFragmentManager(), "DatePickerDialog");
                             }

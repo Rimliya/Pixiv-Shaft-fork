@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.OpenableColumns;
@@ -21,6 +22,7 @@ import android.widget.LinearLayout;
 
 import com.blankj.utilcode.util.AppUtils;
 import com.blankj.utilcode.util.FileIOUtils;
+import com.blankj.utilcode.util.FileUtils;
 import com.blankj.utilcode.util.Utils;
 import com.facebook.rebound.SimpleSpringListener;
 import com.facebook.rebound.Spring;
@@ -32,6 +34,7 @@ import com.qmuiteam.qmui.widget.dialog.QMUIDialogAction;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -46,6 +49,8 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
+
 import ceui.lisa.R;
 import ceui.lisa.activities.MainActivity;
 import ceui.lisa.activities.Shaft;
@@ -66,9 +71,17 @@ import okio.BufferedSource;
 
 public class Common {
 
+    /**
+     * 移除文件系统保留字符
+     */
     private static final String[][] safeReplacer = new String[][]{{"|", "%7c"}, {"\\", "%5c"}, {"?", "%3f"},
             {"*", "\u22c6"}, {"<", "%3c"}, {"\"", "%22"}, {":", "%3a"}, {">", "%3e"}, {"/", "%2f"}};
 
+    /**
+     * Judge the String provided is numeric or not
+     * @param str The provided String
+     * @return true if the string is numeric
+     * */
     public static boolean isNumeric(String str) {
         for (int i = str.length(); --i >= 0; ) {
             if (!Character.isDigit(str.charAt(i))) {
@@ -94,15 +107,13 @@ public class Common {
 
     public static void logOut(Context context, boolean deleteUser) {
         if (Shaft.sUserModel != null) {
-            if (!Dev.isDev) { //测试状态，不要真的退出登录，只是跳转到登录页面
-                Shaft.sUserModel.getUser().setIs_login(false);
-                Local.saveUser(Shaft.sUserModel);
-                if(deleteUser){
-                    UserEntity userEntity = new UserEntity();
-                    userEntity.setUserID(Shaft.sUserModel.getUserId());
-                    AppDatabase.getAppDatabase(context)
-                            .downloadDao().deleteUser(userEntity);
-                }
+            Shaft.sUserModel.getUser().setIs_login(false);
+            Local.saveUser(Shaft.sUserModel);
+            if(deleteUser){
+                UserEntity userEntity = new UserEntity();
+                userEntity.setUserID(Shaft.sUserModel.getUserId());
+                AppDatabase.getAppDatabase(context)
+                        .downloadDao().deleteUser(userEntity);
             }
             Intent intent = new Intent(context, TemplateActivity.class);
             intent.putExtra(TemplateActivity.EXTRA_FRAGMENT, "登录注册");
@@ -112,7 +123,7 @@ public class Common {
     }
 
     public static <T> void showLog(T t) {
-        Log.d("==SHAFT== log ==> ", String.valueOf(t));
+        Log.d("==SHAFT==>", String.valueOf(t));
     }
 
     public static <T> void showToast(T t) {
@@ -123,6 +134,17 @@ public class Common {
         ToastUtils.show(id);
     }
 
+    /**
+     * Show toast information
+     * @param t The information to show
+     * @param type Represents the type of toast
+     *             <p>
+     *                 2:Success
+     *             </p>
+     *             <p>
+     *                  3:Failure
+     *             </p>
+     * */
     //2成功， 3失败， 4info
     public static <T> void showToast(T t, int type) {
         ToastUtils.show(t);
@@ -143,6 +165,8 @@ public class Common {
 
     /**
      * 返回当前程序版本名
+     * @param context The app context
+     * @return versionName The version name of current application
      */
     public static String getAppVersionName(Context context) {
         String versionName=null;
@@ -433,6 +457,14 @@ public class Common {
         return color;
     }
 
+    public static int getNovelTextSize() {
+        int size = Shaft.sSettings.getNovelHolderTextSize();
+        if (size == 0) {
+            return 16;  // 默认大小
+        }
+        return size;
+    }
+
     /**
      * 文件大小是否满足反向搜索条件
      *
@@ -475,5 +507,23 @@ public class Common {
                 }
             }
         }
+    }
+
+    public static Uri copyBitmapToImageCacheFolder(Bitmap bitmap, String fileName){
+        try {
+            // shared_images
+            File cachePath = new File(Utils.getApp().getExternalCacheDir(), "images");
+            cachePath.mkdirs();
+            File file = new File(cachePath, fileName);
+            FileOutputStream fileOutputStream = new FileOutputStream(file);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream);
+            fileOutputStream.close();
+            return FileProvider.getUriForFile(Utils.getApp(), "ceui.lisa.pixiv.provider", file);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

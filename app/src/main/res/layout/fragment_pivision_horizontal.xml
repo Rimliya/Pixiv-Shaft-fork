@@ -34,6 +34,7 @@
                     android:id="@+id/see_more"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:stateListAnimator="@animator/button_press_alpha"
                     android:layout_alignParentEnd="true"
                     android:layout_marginStart="@dimen/sixteen_dp"
                     android:layout_alignBottom="@+id/image_1"
@@ -50,7 +51,7 @@
 
             </RelativeLayout>
 
-            <com.scwang.smartrefresh.layout.SmartRefreshLayout
+            <com.scwang.smart.refresh.layout.SmartRefreshLayout
                 android:layout_width="match_parent"
                 android:id="@+id/refreshLayout"
                 android:layout_below="@+id/rela_1"
@@ -63,7 +64,7 @@
 
                 </androidx.recyclerview.widget.RecyclerView>
 
-            </com.scwang.smartrefresh.layout.SmartRefreshLayout>
+            </com.scwang.smart.refresh.layout.SmartRefreshLayout>
 
 
             <include

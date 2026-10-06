@@ -8,4 +8,13 @@
         android:id="@+id/navFragment"
         android:name="ceui.lisa.jetpack.NavFragment"
         android:label="NavFragment" />
+
+
+    <fragment
+        android:id="@+id/navigation_illust_detail"
+        android:name="ceui.lisa.fragments.FragmentIllust">
+        <argument
+            android:name="illust_id"
+            app:argType="integer" />
+    </fragment>
 </navigation>

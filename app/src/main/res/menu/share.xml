@@ -16,6 +16,12 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_share_image"
+        android:orderInCategory="100"
+        android:title="@string/string_454"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_dislike"
         android:orderInCategory="100"
         android:title="@string/string_1"
@@ -25,6 +31,12 @@
         android:id="@+id/action_mute_illust"
         android:orderInCategory="100"
         android:title="@string/string_355"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_flag_illust"
+        android:orderInCategory="100"
+        android:title="@string/flag_post"
         app:showAsAction="never" />
 
     <item

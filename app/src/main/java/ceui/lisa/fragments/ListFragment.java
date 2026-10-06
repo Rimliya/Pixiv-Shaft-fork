@@ -14,13 +14,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
-import com.scwang.smartrefresh.layout.api.RefreshLayout;
-import com.scwang.smartrefresh.layout.footer.FalsifyFooter;
-import com.scwang.smartrefresh.layout.header.FalsifyHeader;
-import com.scwang.smartrefresh.layout.listener.OnLoadMoreListener;
-import com.scwang.smartrefresh.layout.listener.OnRefreshListener;
+import com.scwang.smart.refresh.header.FalsifyFooter;
+import com.scwang.smart.refresh.header.FalsifyHeader;
+import com.scwang.smart.refresh.layout.api.RefreshLayout;
+import com.scwang.smart.refresh.layout.listener.OnLoadMoreListener;
+import com.scwang.smart.refresh.layout.listener.OnRefreshListener;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import ceui.lisa.R;
 import ceui.lisa.activities.Shaft;
@@ -28,10 +29,13 @@ import ceui.lisa.adapters.BaseAdapter;
 import ceui.lisa.core.BaseRepo;
 import ceui.lisa.helper.StaggeredManager;
 import ceui.lisa.interfaces.FeedBack;
+import ceui.lisa.model.ListTrendingtag;
+import ceui.lisa.models.IllustsBean;
 import ceui.lisa.utils.DensityUtil;
 import ceui.lisa.view.LinearItemDecoration;
 import ceui.lisa.view.SpacesItemDecoration;
 import ceui.lisa.viewmodel.BaseModel;
+import ceui.loxia.ObjectPool;
 import jp.wasabeef.recyclerview.animators.BaseItemAnimator;
 import jp.wasabeef.recyclerview.animators.LandingAnimator;
 
@@ -103,6 +107,10 @@ public abstract class ListFragment<Layout extends ViewDataBinding, Item>
                 mModel.getBaseRepo().getFooter(mContext) : new FalsifyFooter(mContext));
 
         mRefreshLayout.setOnRefreshListener(new OnRefreshListener() {
+            /**
+             * The method was called when refreshing the page
+             * @param refreshLayout (In doubt)
+             */
             @Override
             public void onRefresh(@NonNull RefreshLayout refreshLayout) {
                 try {
@@ -151,6 +159,10 @@ public abstract class ListFragment<Layout extends ViewDataBinding, Item>
                 mRefreshLayout.autoRefresh();
             }
         }
+    }
+
+    public void refresh() {
+        mRefreshLayout.autoRefresh();
     }
 
     @Override
@@ -260,13 +272,27 @@ public abstract class ListFragment<Layout extends ViewDataBinding, Item>
     }
 
     public void onFirstLoaded(List<Item> items) {
-
+        items.forEach(item -> {
+            if (item instanceof IllustsBean) {
+                ObjectPool.INSTANCE.updateIllust((IllustsBean) item);
+            } else if (item instanceof ListTrendingtag.TrendTagsBean) {
+                ObjectPool.INSTANCE.updateIllust(((ListTrendingtag.TrendTagsBean) item).getIllust());
+            }
+        });
     }
 
     public void onNextLoaded(List<Item> items) {
-
+        items.forEach(item -> {
+            if (item instanceof IllustsBean) {
+                ObjectPool.INSTANCE.updateIllust((IllustsBean) item);
+            }
+        });
     }
 
+    /**
+     * mAdapter is not null
+     * Clear all items on the page
+     */
     public void clear() {
         if (mAdapter != null) {
             mAdapter.clear();
@@ -292,11 +318,6 @@ public abstract class ListFragment<Layout extends ViewDataBinding, Item>
 
     public int getStartSize() {
         return allItems.size() + mAdapter.headerSize();
-    }
-
-    public void nowRefresh() {
-        mRecyclerView.smoothScrollToPosition(0);
-        mRefreshLayout.autoRefresh();
     }
 
     public int getCount() {

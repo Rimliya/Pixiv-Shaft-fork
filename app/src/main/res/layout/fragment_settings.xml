@@ -34,7 +34,7 @@
 
         </androidx.appcompat.widget.Toolbar>
 
-        <com.scwang.smartrefresh.layout.SmartRefreshLayout
+        <com.scwang.smart.refresh.layout.SmartRefreshLayout
             android:id="@+id/refreshLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
@@ -66,7 +66,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/account_manage" />
 
                             <TextView style="@style/setting_right_arrow" />
@@ -81,7 +81,7 @@
 
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_91" />
 
                             <TextView style="@style/setting_right_arrow" />
@@ -96,7 +96,7 @@
 
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_92" />
 
 
@@ -113,7 +113,7 @@
 
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_267" />
 
 
@@ -129,7 +129,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_398" />
 
                             <TextView style="@style/setting_right_arrow" />
@@ -159,7 +159,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/login_out" />
 
                             <TextView style="@style/setting_right_arrow" />
@@ -310,37 +310,6 @@
 
                         <View style="@style/half_divider" />
 
-                        <RelativeLayout
-                            android:id="@+id/show_original_image_rela"
-                            style="@style/ripple_rela">
-
-                            <TextView
-                                style="@style/setting_text_left"
-                                android:id="@+id/show_original_image_mark"
-                                android:layout_marginBottom="@dimen/six_dp"
-                                android:text="@string/string_332" />
-
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_toStartOf="@+id/show_original_image"
-                                android:layout_height="wrap_content"
-                                android:layout_below="@+id/show_original_image_mark"
-                                android:layout_marginStart="@dimen/sixteen_dp"
-                                android:layout_marginBottom="@dimen/twelve_dp"
-                                android:textColor="?attr/colorPrimary"
-                                android:ellipsize="start"
-                                android:singleLine="true"
-                                android:text="@string/string_334"
-                                android:textSize="12sp" />
-
-                            <androidx.appcompat.widget.SwitchCompat
-                                android:id="@+id/show_original_image"
-                                style="@style/setting_right_switch"/>
-
-                        </RelativeLayout>
-
-                        <View style="@style/full_divider" />
-
                     </LinearLayout>
 
                     <TextView
@@ -360,7 +329,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/save_view_history" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -377,7 +346,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/delete_star_illust" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -390,11 +359,46 @@
                         <View style="@style/half_divider" />
 
                         <RelativeLayout
+                            android:id="@+id/delete_ai_illust_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                style="@style/setting_text_left_and_center"
+                                android:text="@string/delete_ai_illust" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/delete_ai_illust"
+                                style="@style/setting_right_switch"/>
+
+
+                        </RelativeLayout>
+
+                        <View style="@style/half_divider" />
+
+
+                        <RelativeLayout
+                            android:id="@+id/toast_download_result_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                style="@style/setting_text_left_and_center"
+                                android:text="@string/toast_download_result" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/toast_download_result"
+                                style="@style/setting_right_switch"/>
+
+
+                        </RelativeLayout>
+
+                        <View style="@style/half_divider" />
+
+                        <RelativeLayout
                             android:id="@+id/search_filter_rela"
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/search_result_filter" />
 
                             <TextView
@@ -418,7 +422,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_439" />
 
                             <TextView
@@ -470,7 +474,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_379" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -531,7 +535,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_359" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -547,7 +551,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_426" />
 
                             <TextView
@@ -571,7 +575,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/illust_detail" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -588,7 +592,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/user_detail" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -600,27 +604,11 @@
                         <View style="@style/half_divider" />
 
                         <RelativeLayout
-                            android:id="@+id/illust_detail_show_navbar_rela"
-                            style="@style/ripple_rela">
-
-                            <TextView
-                                style="@style/setting_text_left"
-                                android:text="@string/string_406" />
-
-                            <androidx.appcompat.widget.SwitchCompat
-                                android:id="@+id/illust_detail_show_navbar"
-                                style="@style/setting_right_switch"/>
-
-                        </RelativeLayout>
-
-                        <View style="@style/half_divider" />
-
-                        <RelativeLayout
                             android:id="@+id/theme_mode_rela"
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/theme_mode" />
 
                             <TextView
@@ -647,7 +635,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_324" />
 
                             <TextView
@@ -672,7 +660,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_336" />
 
                             <TextView
@@ -697,7 +685,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/language" />
 
                             <TextView
@@ -736,11 +724,27 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_338" />
 
                             <androidx.appcompat.widget.SwitchCompat
                                 android:id="@+id/r18_divide_save"
+                                style="@style/setting_right_switch"/>
+
+                        </RelativeLayout>
+
+                        <View style="@style/half_divider" />
+
+                        <RelativeLayout
+                            android:id="@+id/ai_divide_save_rela"
+                            style="@style/ripple_rela">
+
+                            <TextView
+                                style="@style/setting_text_left_and_center"
+                                android:text="@string/string_455" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/ai_divide_save"
                                 style="@style/setting_right_switch"/>
 
                         </RelativeLayout>
@@ -753,7 +757,7 @@
 
                             <TextView
                                 android:id="@+id/file_name_s"
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/custom_file_name" />
 
                             <TextView
@@ -777,7 +781,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_407" />
 
                             <TextView
@@ -801,7 +805,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_405" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -817,7 +821,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_452" />
 
                             <TextView
@@ -841,7 +845,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_362" />
 
                             <TextView
@@ -935,7 +939,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_335" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -952,7 +956,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_371" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -969,7 +973,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_372" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -986,7 +990,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_393" />
 
                             <TextView
@@ -1011,7 +1015,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_396" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -1024,28 +1028,11 @@
                         <View style="@style/half_divider" />
 
                         <RelativeLayout
-                            android:id="@+id/global_swipe_back_rela"
-                            style="@style/ripple_rela">
-
-                            <TextView
-                                style="@style/setting_text_left"
-                                android:text="@string/string_397" />
-
-                            <androidx.appcompat.widget.SwitchCompat
-                                android:id="@+id/global_swipe_back"
-                                style="@style/setting_right_switch"/>
-
-
-                        </RelativeLayout>
-
-                        <View style="@style/half_divider" />
-
-                        <RelativeLayout
                             android:id="@+id/download_auto_post_like_rela"
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_409" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -1061,7 +1048,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_451" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -1077,7 +1064,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_367" />
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -1108,7 +1095,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_101" />
 
                             <TextView
@@ -1125,7 +1112,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_102" />
 
                             <TextView
@@ -1157,7 +1144,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_420" />
 
                         </RelativeLayout>
@@ -1169,7 +1156,7 @@
                             style="@style/ripple_rela">
 
                             <TextView
-                                style="@style/setting_text_left"
+                                style="@style/setting_text_left_and_center"
                                 android:text="@string/string_421" />
 
                         </RelativeLayout>
@@ -1182,7 +1169,7 @@
                 </LinearLayout>
             </androidx.core.widget.NestedScrollView>
 
-        </com.scwang.smartrefresh.layout.SmartRefreshLayout>
+        </com.scwang.smart.refresh.layout.SmartRefreshLayout>
 
     </LinearLayout>
 </layout>

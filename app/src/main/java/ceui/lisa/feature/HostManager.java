@@ -14,10 +14,17 @@ import retrofit2.Callback;
 
 public class HostManager {
 
+    //For example:https://i.pximg.net/img-original/img/2024/02/28/05/42/23/116457142_p0.jpg
     public static final String HOST_OLD = "i.pximg.net";
 //    public static final String HOST_OLD = "app-api.pixiv.net";
     public static final String HOST_NEW = "i.pixiv.re";
     private static final String HTTP_HEAD = "http://";
+
+    private static final String LOGIN_HEAD = "https://app-api.pixiv.net/web/v1/login?code_challenge=";
+    private static final String LOGIN_END = "&code_challenge_method=S256&client=pixiv-android";
+    private static final String SIGN_HEAD = "https://app-api.pixiv.net/web/v1/provisional-accounts/create?code_challenge=";
+    private static final String SIGN_END = "&code_challenge_method=S256&client=pixiv-android";
+
     private PKCEItem pkceItem;
 
     private String host;
@@ -34,29 +41,30 @@ public class HostManager {
     }
 
     public void init() {
-        if (Dev.isDev) {
-            host = "210.140.92.139";
-            updateHost();
-        } else {
-            host = randomHost();
-            updateHost();
-        }
+        host = randomHost();
+        updateHost();
     }
+
+    /**
+     *  Get IP address refers to "imgaz.pixiv.net"
+     * @return Random IP address refers to "imgaz.pixiv.net" in String type
+     */
 
     private String randomHost() {
         String[] already = new String[]{
-                "210.140.92.145",
-                "210.140.92.141",
-                "210.140.92.138",
-                "210.140.92.143",
-                "210.140.92.146",
-                "210.140.92.142",
-                "210.140.92.147",
-                "210.140.92.139",
-                "210.140.92.140",
-                "210.140.92.144"
+                "210.140.139.129",
+                "210.140.139.130",
+                "210.140.139.131",
+                "210.140.139.132",
+                "210.140.139.133",
+                "210.140.139.134",
+                "210.140.139.135",
+                "210.140.139.136",
+                "210.140.139.137",
+                "210.140.139.138"
         };
         return already[Common.flatRandom(already.length)];
+      
     }
 
     private void updateHost() {
@@ -148,5 +156,13 @@ public class HostManager {
             }
         }
         return pkceItem;
+    }
+
+    public String getLoginUrl() {
+        return LOGIN_HEAD + getPkce().getChallenge() + LOGIN_END;
+    }
+
+    public String getSignupUrl() {
+        return SIGN_HEAD + getPkce().getChallenge() + SIGN_END;
     }
 }

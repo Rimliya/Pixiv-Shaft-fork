@@ -24,6 +24,8 @@ import ceui.lisa.utils.Common;
 import ceui.lisa.utils.Local;
 import ceui.lisa.utils.Params;
 import ceui.lisa.utils.PixivOperate;
+import ceui.loxia.AccountResponse;
+import ceui.pixiv.session.SessionManager;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 
@@ -69,7 +71,7 @@ public class OutWakeActivity extends BaseActivity<ActivityOutWakeBinding> {
                             List<String> pathArray = uri.getPathSegments();
                             String illustID = pathArray.get(pathArray.size() - 1);
                             if (!TextUtils.isEmpty(illustID)) {
-                                PixivOperate.getIllustByID(Shaft.sUserModel, Integer.parseInt(illustID), mContext, new Callback<Void>() {
+                                PixivOperate.getIllustByID(Shaft.sUserModel, tryParseId(illustID), mContext, new Callback<Void>() {
                                     @Override
                                     public void doSomething(Void t) {
                                         finish();
@@ -93,7 +95,7 @@ public class OutWakeActivity extends BaseActivity<ActivityOutWakeBinding> {
                                 List<String> pathArray = uri.getPathSegments();
                                 novelId = pathArray.get(pathArray.size() - 1);
                             }
-                            PixivOperate.getNovelByID(sUserModel, Integer.parseInt(novelId), mContext, new Callback<Void>() {
+                            PixivOperate.getNovelByID(sUserModel, tryParseId(novelId), mContext, new Callback<Void>() {
                                 @Override
                                 public void doSomething(Void t) {
                                     finish();
@@ -126,7 +128,7 @@ public class OutWakeActivity extends BaseActivity<ActivityOutWakeBinding> {
                                 String idString = end.split("_")[0];
 
                                 Common.showLog("end " + end + " idString " + idString);
-                                PixivOperate.getIllustByID(Shaft.sUserModel, Integer.parseInt(idString), mContext, new Callback<Void>() {
+                                PixivOperate.getIllustByID(Shaft.sUserModel, tryParseId(idString), mContext, new Callback<Void>() {
                                     @Override
                                     public void doSomething(Void t) {
                                         finish();
@@ -158,7 +160,7 @@ public class OutWakeActivity extends BaseActivity<ActivityOutWakeBinding> {
 
                         String illustID = uri.getQueryParameter("illust_id");
                         if (!TextUtils.isEmpty(illustID)) {
-                            PixivOperate.getIllustByID(Shaft.sUserModel, Integer.parseInt(illustID), mContext, new Callback<Void>() {
+                            PixivOperate.getIllustByID(Shaft.sUserModel, tryParseId(illustID), mContext, new Callback<Void>() {
                                 @Override
                                 public void doSomething(Void t) {
                                     finish();
@@ -179,6 +181,7 @@ public class OutWakeActivity extends BaseActivity<ActivityOutWakeBinding> {
                     }
 
                     //pixiv内部链接，如
+                    //pixiv://users/73190863
                     //pixiv://illusts/73190863
                     //pixiv://account/login?code=BsQND5vc6uIWKIwLiDsh0S3h1yno6eVHDVMrX3fONgM&via=login
                     if (scheme.contains("pixiv") || scheme.contains("shaftintent")) {
@@ -188,7 +191,7 @@ public class OutWakeActivity extends BaseActivity<ActivityOutWakeBinding> {
                         if (!TextUtils.isEmpty(host)) {
 
                             if (host.equals("account")) {
-                                Common.showToast("尝试登录");
+                                Common.showToast(getString(R.string.trying_login));
                                 String code = uri.getQueryParameter("code");
                                 Retro.getAccountApi().newLogin(
                                         FragmentLogin.CLIENT_ID,
@@ -209,6 +212,7 @@ public class OutWakeActivity extends BaseActivity<ActivityOutWakeBinding> {
 
                                         userModel.getUser().setIs_login(true);
                                         Local.saveUser(userModel);
+                                        SessionManager.INSTANCE.updateSession(userModel);
 
                                         UserEntity userEntity = new UserEntity();
                                         userEntity.setLoginTime(System.currentTimeMillis());
@@ -262,14 +266,14 @@ public class OutWakeActivity extends BaseActivity<ActivityOutWakeBinding> {
 
                             if (host.contains("illusts")) {
                                 String path = uri.getPath();
-                                PixivOperate.getIllustByID(Shaft.sUserModel, Integer.parseInt(path.substring(1)),
+                                PixivOperate.getIllustByID(Shaft.sUserModel, tryParseId(path.substring(1)),
                                         mContext, t -> finish(),null);
                                 return;
                             }
 
                             if (host.contains("novels")) {
                                 String path = uri.getPath();
-                                PixivOperate.getNovelByID(Shaft.sUserModel, Integer.parseInt(path.substring(1)),
+                                PixivOperate.getNovelByID(Shaft.sUserModel, tryParseId(path.substring(1)),
                                         mContext, t -> finish());
                                 return;
                             }
